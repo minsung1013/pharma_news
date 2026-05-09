@@ -65,19 +65,33 @@ def _call(articles: list[dict], provider: LLMProvider, keywords: str) -> dict[in
     return {item["id"]: item for item in result["items"]}
 
 
+_BATCH_SIZE = 30
+
+
 def classify(articles: list[dict], provider: LLMProvider, top_n: int = 5) -> list[dict]:
     from config import INTEREST_KEYWORDS
     keywords = ", ".join(INTEREST_KEYWORDS)
 
-    classified: dict[int, dict] | None = None
-    for attempt in range(2):
-        try:
-            classified = _call(articles, provider, keywords)
-            break
-        except Exception as e:
-            log.warning(f"Classify attempt {attempt + 1} failed: {e}")
-            if attempt == 1:
-                raise RuntimeError("LLM classification failed after 2 attempts") from e
+    classified: dict[int, dict] = {}
+    batches = [articles[i:i + _BATCH_SIZE] for i in range(0, len(articles), _BATCH_SIZE)]
+    log.info(f"Classification: {len(articles)} articles in {len(batches)} batches")
+
+    for batch_idx, batch in enumerate(batches):
+        for attempt in range(2):
+            try:
+                result = _call(batch, provider, keywords)
+                classified.update(result)
+                log.info(f"  Batch {batch_idx + 1}/{len(batches)}: {len(result)} items classified")
+                break
+            except Exception as e:
+                log.warning(f"  Batch {batch_idx + 1} attempt {attempt + 1} failed: {e}")
+                if attempt == 1:
+                    log.error(f"  Batch {batch_idx + 1} gave up — using fallbacks for {len(batch)} articles")
+
+    # 미분류 항목 수 로깅
+    missed = [a["id"] for a in articles if a["id"] not in classified]
+    if missed:
+        log.warning(f"Classification missed {len(missed)} article IDs: {missed}")
 
     enriched = []
     for a in articles:

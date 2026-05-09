@@ -8,11 +8,14 @@ class LLMProvider(ABC):
 
 
 class OpenAIProvider(LLMProvider):
+    def __init__(self, model: str | None = None):
+        self._model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
     def complete(self, system: str, user: str, json_mode: bool = True) -> str:
         from openai import OpenAI
         client = OpenAI()
         kwargs: dict = {
-            "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            "model": self._model,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -62,11 +65,20 @@ class InternalAPIProvider(LLMProvider):
 
 def get_provider() -> LLMProvider:
     name = os.getenv("LLM_PROVIDER", "openai").lower()
-    providers = {
-        "openai": OpenAIProvider,
-        "ollama": OllamaProvider,
-        "internal": InternalAPIProvider,
-    }
-    if name not in providers:
-        raise ValueError(f"Unknown LLM_PROVIDER: {name!r}. Choose from {list(providers)}")
-    return providers[name]()
+    if name == "openai":
+        return OpenAIProvider()
+    if name == "ollama":
+        return OllamaProvider()
+    if name == "internal":
+        return InternalAPIProvider()
+    raise ValueError(f"Unknown LLM_PROVIDER: {name!r}. Choose from openai, ollama, internal")
+
+
+def get_bd_provider() -> LLMProvider:
+    """BD 시사점 생성용 고성능 provider. OPENAI_MODEL_BD 환경변수로 모델 지정."""
+    name = os.getenv("LLM_PROVIDER", "openai").lower()
+    if name == "openai":
+        model = os.getenv("OPENAI_MODEL_BD", "gpt-4.1")
+        return OpenAIProvider(model=model)
+    # OpenAI 외 provider는 단일 모델이므로 기본 provider 그대로 사용
+    return get_provider()

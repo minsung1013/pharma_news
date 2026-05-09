@@ -85,7 +85,7 @@ def main() -> None:
     from scraper             import scrape_body
     from summarizer          import summarize_highlight, generate_digest
     from mailer              import build_html, send_mail
-    from providers           import get_provider
+    from providers           import get_provider, get_bd_provider
     from capability_updater  import get_lg_capabilities, format_for_prompt
 
     today = date.today().strftime("%Y-%m-%d")
@@ -99,7 +99,8 @@ def main() -> None:
 
     # ── [2] LLM 일괄 분류 ─────────────────────────────────────────────────────
     log.info("=== [2] LLM 분류 시작 ===")
-    provider = get_provider()
+    provider    = get_provider()       # gpt-4o-mini: 분류·번역·종합분석
+    bd_provider = get_bd_provider()    # gpt-4.1: 하이라이트 BD 시사점
     articles = classify(articles, provider)
 
     # ── [3] 조직 CSV 누적 ─────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ def main() -> None:
     lg_caps = get_lg_capabilities(provider)
     lg_caps_str = format_for_prompt(lg_caps)
     for h in highlight_reps:
-        h["_detail"] = summarize_highlight(h, h["_body"], provider, lg_capabilities=lg_caps_str)
+        h["_detail"] = summarize_highlight(h, h["_body"], bd_provider, lg_capabilities=lg_caps_str)
 
     # ── [6] 종합 분석 ─────────────────────────────────────────────────────────
     log.info("=== [6] 종합 분석 ===")
