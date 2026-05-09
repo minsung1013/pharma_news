@@ -15,12 +15,16 @@ _SYSTEM = """\
    예: "Digital Pathology", "Big Pharma Deal", "Antibody Engineering",
        "AI Drug Discovery", "Clinical Trial", "Protein Design",
        "Funding", "Regulation", "Drug Approval".
-3. highlight_score: 0~10 정수. 아래 기준을 종합해 평가:
-   - 관심 키워드와의 관련성 (핵심 가중치)
-   - 산업 임팩트 (딜 규모, 임상 성과, 기술 혁신성)
-   - 정보 밀도 (수치·데이터·구체적 성과 포함 여부)
-   - 시의성 (업계 전반에 즉각적 영향을 미치는 뉴스)
-   10: 핵심 관심사, 0: 무관.
+3. highlight_score: 0~10 정수. 아래 6개 카테고리 해당 여부로 평가:
+   [핵심 카테고리 — 해당 시 7~10점]
+   - AI 신약 개발: AI/ML을 활용한 신약 발굴·설계·임상 예측
+   - 디지털 병리학: digital pathology, computational pathology, WSI, 슬라이드 AI 분석
+   - 단백질 구조 예측·설계: AlphaFold, RoseTTAFold, de novo protein, protein language model
+   - 항체 설계: antibody design/engineering, bispecific antibody, ADC
+   - 알츠하이머·신경퇴행: Alzheimer, amyloid, tau, dementia, neurodegeneration
+   - 빅파마 합병·파트너십·신사업 전략: M&A, acquisition, licensing deal, strategic partnership, 신규 플랫폼 발표
+   [관련성 있으나 핵심 아님 — 3~6점]
+   [무관 — 0~2점]
 4. matched_keywords: 관심 키워드 중 부합하는 것들의 배열 (없으면 빈 배열).
 5. dedup_group_id: 동일 사건/주제를 다룬 항목들에 같은 양의 정수 ID 부여.
    완전히 다른 주제는 각자 고유 ID. 가장 정보량이 많은 항목을 그룹 대표로.

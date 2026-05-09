@@ -105,7 +105,7 @@ def _news_section(articles: list[dict], item_type: str) -> str:
             is_en   = a.get("lang") == "en"
             orig_en = _e(a.get("title", ""))
 
-            if is_en and korean and korean != orig_en:
+            if is_en:
                 html += (
                     f'<div class="item">• {korean}'
                     f' <span class="en-sub">/ {orig_en}</span>'
