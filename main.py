@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Windows 콘솔 UTF-8 설정 (한국어·특수문자 로그 깨짐 방지)
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",

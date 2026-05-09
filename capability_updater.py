@@ -79,9 +79,9 @@ def _save_cache(data: dict) -> None:
 
 def _search_web(queries: list[str]) -> str:
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
     except ImportError:
-        log.warning("duckduckgo_search not installed — skipping web search")
+        log.warning("ddgs not installed - skipping web search")
         return ""
 
     collected: list[str] = []
