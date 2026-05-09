@@ -27,6 +27,8 @@ PAPER_SOURCES = [
     {"name": "arXiv: q-bio.BM",          "url": "http://export.arxiv.org/rss/q-bio.BM",                               "type": "paper", "lang": "en"},
     # 알츠하이머·신경과학 (Neurons and Cognition)
     {"name": "arXiv: q-bio.NC",          "url": "http://export.arxiv.org/rss/q-bio.NC",                               "type": "paper", "lang": "en"},
+    # PubMed 복합 키워드 검색 (AI신약·항체·단백질·디지털병리·알츠하이머·공간전사체)
+    {"name": "PubMed",                   "url": "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO2XEg53wBj-I0_CPCaOtutMDPCVGo2oNVszJgDskJ/?limit=15", "type": "paper", "lang": "en"},
 ]
 
 INTEREST_KEYWORDS = [
