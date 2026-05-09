@@ -78,7 +78,7 @@ def get_bd_provider() -> LLMProvider:
     """BD 시사점 생성용 고성능 provider. OPENAI_MODEL_BD 환경변수로 모델 지정."""
     name = os.getenv("LLM_PROVIDER", "openai").lower()
     if name == "openai":
-        model = os.getenv("OPENAI_MODEL_BD", "gpt-4.1")
+        model = os.getenv("OPENAI_MODEL_BD", "gpt-5.4")
         return OpenAIProvider(model=model)
     # OpenAI 외 provider는 단일 모델이므로 기본 provider 그대로 사용
     return get_provider()

@@ -20,7 +20,7 @@ jobs:
       # ── LLM ────────────────────────────────
       LLM_PROVIDER: openai
       OPENAI_MODEL: gpt-4o-mini        # 분류·번역·종합분석
-      OPENAI_MODEL_BD: gpt-4.1         # 하이라이트 BD 시사점 (고성능)
+      OPENAI_MODEL_BD: gpt-5.4          # 하이라이트 BD 시사점 (고성능)
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       # ── Gmail (Secrets에서 관리) ────────────
