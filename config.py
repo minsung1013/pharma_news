@@ -11,7 +11,7 @@ NEWS_SOURCES = [
     {"name": "Endpoints News",       "url": "https://endpts.com/feed/",                              "type": "news", "lang": "en"},
     {"name": "Nature Biotechnology", "url": "https://www.nature.com/nbt.rss",                        "type": "news", "lang": "en"},
     {"name": "바이오타임즈",          "url": "https://www.biotimes.co.kr/rss/allArticle.xml",        "type": "news", "lang": "ko"},
-    {"name": "히트뉴스",             "url": "https://www.hitnews.co.kr/rss/allArticle.xml",          "type": "news", "lang": "ko"},
+    {"name": "BRIC",                 "url": "https://www.ibric.org/bric/rss/bio-news.do",            "type": "news", "lang": "ko"},
 ]
 
 PAPER_SOURCES = [
