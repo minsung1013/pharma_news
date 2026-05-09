@@ -37,11 +37,14 @@ INTEREST_KEYWORDS = [
     "spatial transcriptomics", "spatial omics", "Visium", "Xenium",
     # 사이클로펩타이드
     "cyclic peptide", "macrocycle", "peptide drug",
+    # 알츠하이머·신경퇴행
+    "Alzheimer", "Alzheimer's disease", "amyloid beta", "amyloid-beta",
+    "tau protein", "neurodegeneration", "neurodegenerative", "dementia",
+    "cognitive decline", "BACE inhibitor", "lecanemab", "donanemab",
     # 한국어 키워드
     "항체", "단백질 설계", "디지털 병리", "공간전사체", "사이클로펩타이드",
+    "알츠하이머", "치매", "신경퇴행", "아밀로이드",
 ]
 
-MAX_NEWS_PER_SOURCE   = int(os.getenv("MAX_NEWS_PER_SOURCE", "10"))
-MAX_PAPERS_PER_SOURCE = int(os.getenv("MAX_PAPERS_PER_SOURCE", "5"))
-SCRAPE_TIMEOUT_SEC    = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
-ORG_CSV_PATH          = os.getenv("ORG_CSV_PATH", "./data/organizations.csv")
+SCRAPE_TIMEOUT_SEC = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
+ORG_CSV_PATH       = os.getenv("ORG_CSV_PATH", "./data/organizations.csv")

@@ -28,8 +28,6 @@ jobs:
       RECIPIENTS: ${{ secrets.RECIPIENTS }}
 
       # ── 운영 옵션 (여기서 직접 수정) ────────
-      MAX_NEWS_PER_SOURCE: 10
-      MAX_PAPERS_PER_SOURCE: 5
       SCRAPE_TIMEOUT_SEC: 30
       ORG_CSV_PATH: ./data/organizations.csv
 

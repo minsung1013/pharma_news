@@ -1,6 +1,6 @@
 import re
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 import feedparser
@@ -26,7 +26,7 @@ def _parse_published(entry) -> Optional[datetime]:
     return None
 
 
-def fetch_source(source: dict, max_items: int) -> list[dict]:
+def fetch_source(source: dict) -> list[dict]:
     try:
         feed = feedparser.parse(
             source["url"],
@@ -40,14 +40,10 @@ def fetch_source(source: dict, max_items: int) -> list[dict]:
         log.warning(f"[{source['name']}] bozo feed (no entries): {feed.bozo_exception}")
         return []
 
-    cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=24)
     items = []
 
-    for entry in feed.entries[:max_items]:
+    for entry in feed.entries:
         published = _parse_published(entry)
-
-        if published and published < cutoff:
-            continue
 
         title = _strip_html(getattr(entry, 'title', '') or '').strip()
         if not title:
@@ -71,22 +67,20 @@ def fetch_source(source: dict, max_items: int) -> list[dict]:
             "published": published.isoformat() if published else None,
         })
 
-    log.info(f"[{source['name']}] {len(items)} items within 24h")
+    log.info(f"[{source['name']}] {len(items)} items")
     return items
 
 
 def fetch_all(
     news_sources: list[dict],
     paper_sources: list[dict],
-    max_news: int,
-    max_papers: int,
 ) -> list[dict]:
     articles: list[dict] = []
 
     for src in news_sources:
-        articles.extend(fetch_source(src, max_news))
+        articles.extend(fetch_source(src))
     for src in paper_sources:
-        articles.extend(fetch_source(src, max_papers))
+        articles.extend(fetch_source(src))
 
     for i, a in enumerate(articles):
         a['id'] = i
