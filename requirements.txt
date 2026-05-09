@@ -1,0 +1,5 @@
+feedparser
+openai
+playwright
+python-dotenv
+requests
