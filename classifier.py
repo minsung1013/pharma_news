@@ -15,9 +15,13 @@ _SYSTEM = """\
    예: "Digital Pathology", "Big Pharma Deal", "Antibody Engineering",
        "AI Drug Discovery", "Clinical Trial", "Protein Design",
        "Funding", "Regulation", "Drug Approval".
-3. is_highlight: 아래 관심 키워드 목록과 의미상 부합하면 true
-   (단순 단어 일치가 아닌 문맥 기반 판단).
-4. matched_keywords: 부합한 키워드들의 배열 (없으면 빈 배열).
+3. highlight_score: 0~10 정수. 아래 기준을 종합해 평가:
+   - 관심 키워드와의 관련성 (핵심 가중치)
+   - 산업 임팩트 (딜 규모, 임상 성과, 기술 혁신성)
+   - 정보 밀도 (수치·데이터·구체적 성과 포함 여부)
+   - 시의성 (업계 전반에 즉각적 영향을 미치는 뉴스)
+   10: 핵심 관심사, 0: 무관.
+4. matched_keywords: 관심 키워드 중 부합하는 것들의 배열 (없으면 빈 배열).
 5. dedup_group_id: 동일 사건/주제를 다룬 항목들에 같은 양의 정수 ID 부여.
    완전히 다른 주제는 각자 고유 ID. 가장 정보량이 많은 항목을 그룹 대표로.
 6. organizations: 기사·논문의 주체 조직을 모두 추출.
@@ -33,7 +37,7 @@ _SYSTEM = """\
 {keywords}
 
 반드시 JSON으로만 응답 (다른 텍스트 없음):
-{{"items": [{{"id": <int>, "korean_summary": "...", "category": "...", "is_highlight": true, "matched_keywords": [], "dedup_group_id": <int>, "organizations": [{{"name": "...", "org_type": "...", "role": "..."}}]}}]}}
+{{"items": [{{"id": <int>, "korean_summary": "...", "category": "...", "highlight_score": <int 0-10>, "matched_keywords": [], "dedup_group_id": <int>, "organizations": [{{"name": "...", "org_type": "...", "role": "..."}}]}}]}}
 """
 
 _USER = "오늘의 항목 목록:\n{articles_json}"
@@ -57,13 +61,7 @@ def _call(articles: list[dict], provider: LLMProvider, keywords: str) -> dict[in
     return {item["id"]: item for item in result["items"]}
 
 
-def _direct_keyword_matches(text: str, keywords: list[str]) -> list[str]:
-    """제목+요약 텍스트에서 관심 키워드 직접 매칭 (대소문자 무시)."""
-    text_lower = text.lower()
-    return [kw for kw in keywords if kw.lower() in text_lower]
-
-
-def classify(articles: list[dict], provider: LLMProvider) -> list[dict]:
+def classify(articles: list[dict], provider: LLMProvider, top_n: int = 5) -> list[dict]:
     from config import INTEREST_KEYWORDS
     keywords = ", ".join(INTEREST_KEYWORDS)
 
@@ -80,29 +78,29 @@ def classify(articles: list[dict], provider: LLMProvider) -> list[dict]:
     enriched = []
     for a in articles:
         c = classified.get(a["id"], {})  # type: ignore[union-attr]
-
-        is_highlight    = bool(c.get("is_highlight", False))
-        matched_keywords = c.get("matched_keywords", [])
-
-        # LLM 판단과 무관하게 키워드 직접 매칭 시 무조건 하이라이트
-        if not is_highlight:
-            combined = f"{a['title']} {a['summary']}"
-            direct   = _direct_keyword_matches(combined, INTEREST_KEYWORDS)
-            if direct:
-                is_highlight = True
-                matched_keywords = matched_keywords or direct
-                log.debug(f"Keyword-forced highlight: {a['title'][:60]} — {direct}")
-
         enriched.append({
             **a,
-            "korean_summary":   c.get("korean_summary",  a["title"]),
-            "category":         c.get("category",        "Other"),
-            "is_highlight":     is_highlight,
-            "matched_keywords": matched_keywords,
-            "dedup_group_id":   c.get("dedup_group_id",  a["id"]),
-            "organizations":    c.get("organizations",   []),
+            "korean_summary":   c.get("korean_summary",   a["title"]),
+            "category":         c.get("category",         "Other"),
+            "highlight_score":  int(c.get("highlight_score", 0)),
+            "matched_keywords": c.get("matched_keywords",  []),
+            "dedup_group_id":   c.get("dedup_group_id",   a["id"]),
+            "organizations":    c.get("organizations",    []),
         })
 
-    n_llm      = sum(1 for a in enriched if a["is_highlight"])
-    log.info(f"Classification done — highlights: {n_llm}/{len(enriched)} (LLM + keyword match)")
+    # dedup 대표 기사 중 점수 상위 top_n개만 하이라이트
+    seen_dedup: set[int] = set()
+    scored: list[dict] = []
+    for a in sorted(enriched, key=lambda x: x["highlight_score"], reverse=True):
+        gid = a.get("dedup_group_id", a["id"])
+        if gid not in seen_dedup:
+            seen_dedup.add(gid)
+            scored.append(a)
+
+    top_ids = {a["id"] for a in scored[:top_n]}
+    for a in enriched:
+        a["is_highlight"] = a["id"] in top_ids
+
+    top_scores = [a["highlight_score"] for a in scored[:top_n]]
+    log.info(f"Classification done — top {top_n} highlights (scores: {top_scores})")
     return enriched

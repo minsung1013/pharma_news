@@ -116,7 +116,7 @@ def _news_section(articles: list[dict], item_type: str) -> str:
     return html
 
 
-def _digest_section(digest: Optional[dict], highlights: list[dict]) -> str:
+def _digest_section(digest: Optional[dict]) -> str:
     if not digest:
         return "<p><em>종합 분석 생성 실패</em></p>"
 
@@ -126,19 +126,6 @@ def _digest_section(digest: Optional[dict], highlights: list[dict]) -> str:
     if movements := digest.get("movements"):
         html += '<div class="digest-label">빅파마·바이오텍 주요 움직임</div><ul>'
         html += "".join(f"<li>{_e(m)}</li>" for m in movements)
-        html += "</ul>"
-    if highlights:
-        html += '<div class="digest-label">⭐ 오늘의 주요 하이라이트</div><ul>'
-        for h in highlights:
-            detail   = h.get("_detail") or {}
-            title_kr = _e(detail.get("title_kr") or h.get("title", ""))
-            summary  = _e(h.get("korean_summary", ""))
-            link     = h.get("link", "#")
-            category = _e(h.get("category", ""))
-            html += (
-                f'<li><strong>[{category}]</strong> {title_kr}'
-                f' — {summary} <a href="{link}">[링크]</a></li>'
-            )
         html += "</ul>"
     html += "</div>"
     return html
@@ -198,7 +185,7 @@ def build_html(
 ) -> str:
     news_html    = _news_section(articles, "news")
     papers_html  = _news_section(articles, "paper")
-    digest_html  = _digest_section(digest, highlights)
+    digest_html  = _digest_section(digest)
     hl_html      = _highlights_section(highlights, articles)
 
     return f"""<!DOCTYPE html>
@@ -212,21 +199,21 @@ def build_html(
 <body>
 <h1>BioPharma Digest &mdash; {date_str}</h1>
 
-<h2>📰 오늘의 뉴스</h2>
-{news_html}
-
-<h2>📑 신규 연구 논문</h2>
-{papers_html}
-
-<hr>
-
 <h2>🔍 오늘의 종합</h2>
 {digest_html}
 
 <hr>
 
-<h2>⭐ 관심 키워드 하이라이트</h2>
+<h2>⭐ 핵심 하이라이트 Top 5</h2>
 {hl_html}
+
+<hr>
+
+<h2>📰 오늘의 뉴스</h2>
+{news_html}
+
+<h2>📑 신규 연구 논문</h2>
+{papers_html}
 
 </body>
 </html>"""
