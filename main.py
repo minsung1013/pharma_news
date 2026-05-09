@@ -75,13 +75,14 @@ def main() -> None:
         NEWS_SOURCES, PAPER_SOURCES,
         SCRAPE_TIMEOUT_SEC, ORG_CSV_PATH,
     )
-    from fetcher     import fetch_all
-    from classifier  import classify
-    from org_logger  import append_organizations
-    from scraper     import scrape_body
-    from summarizer  import summarize_highlight, generate_digest
-    from mailer      import build_html, send_mail
-    from providers   import get_provider
+    from fetcher             import fetch_all
+    from classifier          import classify
+    from org_logger          import append_organizations
+    from scraper             import scrape_body
+    from summarizer          import summarize_highlight, generate_digest
+    from mailer              import build_html, send_mail
+    from providers           import get_provider
+    from capability_updater  import get_lg_capabilities, format_for_prompt
 
     today = date.today().strftime("%Y-%m-%d")
 
@@ -116,8 +117,11 @@ def main() -> None:
 
     # ── [5] 하이라이트 상세 요약 ──────────────────────────────────────────────
     log.info("=== [5] 하이라이트 LLM 요약 ===")
+    log.info("LG AI 역량 로드 중 (캐시 or 웹 검색)...")
+    lg_caps = get_lg_capabilities(provider)
+    lg_caps_str = format_for_prompt(lg_caps)
     for h in highlight_reps:
-        h["_detail"] = summarize_highlight(h, h["_body"], provider)
+        h["_detail"] = summarize_highlight(h, h["_body"], provider, lg_capabilities=lg_caps_str)
 
     # ── [6] 종합 분석 ─────────────────────────────────────────────────────────
     log.info("=== [6] 종합 분석 ===")
