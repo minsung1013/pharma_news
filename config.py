@@ -15,11 +15,18 @@ NEWS_SOURCES = [
 ]
 
 PAPER_SOURCES = [
-    {"name": "bioRxiv: Bioinformatics",    "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",            "type": "paper", "lang": "en"},
-    {"name": "bioRxiv: Synthetic Biology", "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=synthetic_biology",         "type": "paper", "lang": "en"},
-    {"name": "bioRxiv: Pharmacology",      "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=pharmacology_and_toxicology", "type": "paper", "lang": "en"},
-    {"name": "arXiv: q-bio",               "url": "http://export.arxiv.org/rss/q-bio",                                             "type": "paper", "lang": "en"},
-    {"name": "arXiv: cs.LG",               "url": "http://export.arxiv.org/rss/cs.LG",                                             "type": "paper", "lang": "en"},
+    # AI in biotech / bioinformatics
+    {"name": "bioRxiv: Bioinformatics",  "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",  "type": "paper", "lang": "en"},
+    # 항암 항체 설계
+    {"name": "bioRxiv: Cancer Biology",  "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=cancer_biology",  "type": "paper", "lang": "en"},
+    # ML/AI 연구
+    {"name": "arXiv: cs.LG",             "url": "http://export.arxiv.org/rss/cs.LG",                                  "type": "paper", "lang": "en"},
+    # 디지털 병리학 (Computer Vision)
+    {"name": "arXiv: cs.CV",             "url": "http://export.arxiv.org/rss/cs.CV",                                  "type": "paper", "lang": "en"},
+    # 단백질 구조 예측·설계 (Biomolecules)
+    {"name": "arXiv: q-bio.BM",          "url": "http://export.arxiv.org/rss/q-bio.BM",                               "type": "paper", "lang": "en"},
+    # PubMed 키워드 RSS (사용자 설정)
+    {"name": "PubMed",                   "url": "https://pubmed.ncbi.nlm.nih.gov/rss/search/1fEDSjbVglhhtIGmKP0ELoFNuYLjSIgx4dW-cuM2xOFDCI-Ygx/?limit=15", "type": "paper", "lang": "en"},
 ]
 
 INTEREST_KEYWORDS = [
