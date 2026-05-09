@@ -25,6 +25,8 @@ PAPER_SOURCES = [
     {"name": "arXiv: cs.CV",             "url": "http://export.arxiv.org/rss/cs.CV",                                  "type": "paper", "lang": "en"},
     # 단백질 구조 예측·설계 (Biomolecules)
     {"name": "arXiv: q-bio.BM",          "url": "http://export.arxiv.org/rss/q-bio.BM",                               "type": "paper", "lang": "en"},
+    # 알츠하이머·신경과학 (Neurons and Cognition)
+    {"name": "arXiv: q-bio.NC",          "url": "http://export.arxiv.org/rss/q-bio.NC",                               "type": "paper", "lang": "en"},
     # PubMed 키워드 RSS (사용자 설정)
     {"name": "PubMed",                   "url": "https://pubmed.ncbi.nlm.nih.gov/rss/search/1fEDSjbVglhhtIGmKP0ELoFNuYLjSIgx4dW-cuM2xOFDCI-Ygx/?limit=15", "type": "paper", "lang": "en"},
 ]
