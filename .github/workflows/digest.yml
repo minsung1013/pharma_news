@@ -15,12 +15,21 @@ jobs:
 
     env:
       TZ: Asia/Seoul
+
+      # ── LLM ────────────────────────────────
       LLM_PROVIDER: openai
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: gpt-4o-mini
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      # ── Gmail (Secrets에서 관리) ────────────
       GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
       GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
       RECIPIENTS: ${{ secrets.RECIPIENTS }}
+
+      # ── 운영 옵션 (여기서 직접 수정) ────────
+      MAX_NEWS_PER_SOURCE: 10
+      MAX_PAPERS_PER_SOURCE: 5
+      SCRAPE_TIMEOUT_SEC: 30
       ORG_CSV_PATH: ./data/organizations.csv
 
     steps:
