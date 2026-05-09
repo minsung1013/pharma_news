@@ -1,6 +1,6 @@
 import re
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 import feedparser
@@ -40,10 +40,14 @@ def fetch_source(source: dict) -> list[dict]:
         log.warning(f"[{source['name']}] bozo feed (no entries): {feed.bozo_exception}")
         return []
 
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=24)
     items = []
 
     for entry in feed.entries:
         published = _parse_published(entry)
+
+        if published and published < cutoff:
+            continue
 
         title = _strip_html(getattr(entry, 'title', '') or '').strip()
         if not title:
@@ -67,7 +71,7 @@ def fetch_source(source: dict) -> list[dict]:
             "published": published.isoformat() if published else None,
         })
 
-    log.info(f"[{source['name']}] {len(items)} items")
+    log.info(f"[{source['name']}] {len(items)} items within 24h")
     return items
 
 
