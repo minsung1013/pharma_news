@@ -57,6 +57,12 @@ def _call(articles: list[dict], provider: LLMProvider, keywords: str) -> dict[in
     return {item["id"]: item for item in result["items"]}
 
 
+def _direct_keyword_matches(text: str, keywords: list[str]) -> list[str]:
+    """제목+요약 텍스트에서 관심 키워드 직접 매칭 (대소문자 무시)."""
+    text_lower = text.lower()
+    return [kw for kw in keywords if kw.lower() in text_lower]
+
+
 def classify(articles: list[dict], provider: LLMProvider) -> list[dict]:
     from config import INTEREST_KEYWORDS
     keywords = ", ".join(INTEREST_KEYWORDS)
@@ -74,16 +80,29 @@ def classify(articles: list[dict], provider: LLMProvider) -> list[dict]:
     enriched = []
     for a in articles:
         c = classified.get(a["id"], {})  # type: ignore[union-attr]
+
+        is_highlight    = bool(c.get("is_highlight", False))
+        matched_keywords = c.get("matched_keywords", [])
+
+        # LLM 판단과 무관하게 키워드 직접 매칭 시 무조건 하이라이트
+        if not is_highlight:
+            combined = f"{a['title']} {a['summary']}"
+            direct   = _direct_keyword_matches(combined, INTEREST_KEYWORDS)
+            if direct:
+                is_highlight = True
+                matched_keywords = matched_keywords or direct
+                log.debug(f"Keyword-forced highlight: {a['title'][:60]} — {direct}")
+
         enriched.append({
             **a,
-            "korean_summary":  c.get("korean_summary",  a["title"]),
-            "category":        c.get("category",        "Other"),
-            "is_highlight":    bool(c.get("is_highlight", False)),
-            "matched_keywords": c.get("matched_keywords", []),
-            "dedup_group_id":  c.get("dedup_group_id",  a["id"]),
-            "organizations":   c.get("organizations",   []),
+            "korean_summary":   c.get("korean_summary",  a["title"]),
+            "category":         c.get("category",        "Other"),
+            "is_highlight":     is_highlight,
+            "matched_keywords": matched_keywords,
+            "dedup_group_id":   c.get("dedup_group_id",  a["id"]),
+            "organizations":    c.get("organizations",   []),
         })
 
-    n_highlights = sum(1 for a in enriched if a["is_highlight"])
-    log.info(f"Classification done — highlights: {n_highlights}/{len(enriched)}")
+    n_llm      = sum(1 for a in enriched if a["is_highlight"])
+    log.info(f"Classification done — highlights: {n_llm}/{len(enriched)} (LLM + keyword match)")
     return enriched

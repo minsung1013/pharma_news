@@ -73,6 +73,8 @@ h2 {
 a { color: #2e86c1; text-decoration: none; }
 a:hover { text-decoration: underline; }
 hr { border: none; border-top: 1px solid #e0e0e0; margin: 28px 0; }
+.en-sub { color: #888; font-size: 12px; }
+.hl-title-en { font-size: 12px; color: #888; margin-top: 2px; margin-bottom: 8px; }
 """
 
 
@@ -98,9 +100,19 @@ def _news_section(articles: list[dict], item_type: str) -> str:
     for source, items in sources.items():
         html += f'<div class="source-label">{_e(source)}</div>'
         for a in items:
-            summary = _e(a.get("korean_summary") or a.get("title", ""))
-            link = a.get("link", "#")
-            html += f'<div class="item">• {summary} <a href="{link}">[링크]</a></div>'
+            korean  = _e(a.get("korean_summary") or a.get("title", ""))
+            link    = a.get("link", "#")
+            is_en   = a.get("lang") == "en"
+            orig_en = _e(a.get("title", ""))
+
+            if is_en and korean and korean != orig_en:
+                html += (
+                    f'<div class="item">• {korean}'
+                    f' <span class="en-sub">/ {orig_en}</span>'
+                    f' <a href="{link}">[link]</a></div>'
+                )
+            else:
+                html += f'<div class="item">• {korean} <a href="{link}">[링크]</a></div>'
     return html
 
 
@@ -148,29 +160,32 @@ def _highlights_section(highlights: list[dict], all_articles: list[dict]) -> str
         related = dedup_counts.get(gid, 1) - 1
 
         title_kr      = _e(detail.get("title_kr") or h.get("title", ""))
+        title_en      = _e(h.get("title", ""))
         summary_text  = _e(detail.get("summary")  or h.get("korean_summary", ""))
         impl_text     = _e(detail.get("implication", ""))
         category      = _e(h.get("category", ""))
         keywords      = _e(", ".join(h.get("matched_keywords", [])))
         link          = h.get("link", "#")
+        is_en         = h.get("lang") == "en"
 
-        html += f"""<div class="highlight-card">
-  <div class="hl-category">🏷 {category}</div>
-  <div class="hl-title">{title_kr}</div>
-  <div class="hl-section">요약</div>
-  <div class="hl-body">{summary_text}</div>"""
+        html += f'<div class="highlight-card">'
+        html += f'<div class="hl-category">🏷 {category}</div>'
+        html += f'<div class="hl-title">{title_kr}</div>'
+        if is_en and title_kr != title_en:
+            html += f'<div class="hl-title-en">{title_en}</div>'
+        html += f'<div class="hl-section">요약</div>'
+        html += f'<div class="hl-body">{summary_text}</div>'
 
         if impl_text:
-            html += f"""
-  <div class="hl-section">BD 시사점</div>
-  <div class="implication">{impl_text}</div>"""
+            html += f'<div class="hl-section">BD 시사점</div>'
+            html += f'<div class="implication">{impl_text}</div>'
 
-        html += f'\n  <div class="hl-footer"><a href="{link}">[원문]</a>'
+        html += f'<div class="hl-footer"><a href="{link}">[원문]</a>'
         if related > 0:
             html += f"&nbsp;&nbsp;관련 보도 {related}건"
         if keywords:
             html += f"&nbsp;&nbsp;키워드: {keywords}"
-        html += "</div>\n</div>"
+        html += "</div></div>"
 
     return html
 

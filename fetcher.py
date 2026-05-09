@@ -64,6 +64,7 @@ def fetch_source(source: dict, max_items: int) -> list[dict]:
         items.append({
             "source":    source["name"],
             "type":      source["type"],
+            "lang":      source.get("lang", "en"),
             "title":     title,
             "summary":   summary,
             "link":      link,

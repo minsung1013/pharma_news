@@ -4,22 +4,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 NEWS_SOURCES = [
-    {"name": "STAT News",            "url": "https://www.statnews.com/feed/",                        "type": "news"},
-    {"name": "Fierce Biotech",       "url": "https://www.fiercebiotech.com/rss/xml",                 "type": "news"},
-    {"name": "Fierce Pharma",        "url": "https://www.fiercepharma.com/rss/xml",                  "type": "news"},
-    {"name": "BioPharma Dive",       "url": "https://www.biopharmadive.com/feeds/news/",              "type": "news"},
-    {"name": "Endpoints News",       "url": "https://endpts.com/feed/",                              "type": "news"},
-    {"name": "Nature Biotechnology", "url": "https://www.nature.com/nbt.rss",                        "type": "news"},
-    {"name": "바이오타임즈",          "url": "https://www.biotimes.co.kr/rss/allArticle.xml",        "type": "news"},
-    {"name": "히트뉴스",             "url": "https://www.hitnews.co.kr/rss/allArticle.xml",          "type": "news"},
+    {"name": "STAT News",            "url": "https://www.statnews.com/feed/",                        "type": "news", "lang": "en"},
+    {"name": "Fierce Biotech",       "url": "https://www.fiercebiotech.com/rss/xml",                 "type": "news", "lang": "en"},
+    {"name": "Fierce Pharma",        "url": "https://www.fiercepharma.com/rss/xml",                  "type": "news", "lang": "en"},
+    {"name": "BioPharma Dive",       "url": "https://www.biopharmadive.com/feeds/news/",              "type": "news", "lang": "en"},
+    {"name": "Endpoints News",       "url": "https://endpts.com/feed/",                              "type": "news", "lang": "en"},
+    {"name": "Nature Biotechnology", "url": "https://www.nature.com/nbt.rss",                        "type": "news", "lang": "en"},
+    {"name": "바이오타임즈",          "url": "https://www.biotimes.co.kr/rss/allArticle.xml",        "type": "news", "lang": "ko"},
+    {"name": "히트뉴스",             "url": "https://www.hitnews.co.kr/rss/allArticle.xml",          "type": "news", "lang": "ko"},
 ]
 
 PAPER_SOURCES = [
-    {"name": "bioRxiv: Bioinformatics",    "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",            "type": "paper"},
-    {"name": "bioRxiv: Synthetic Biology", "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=synthetic_biology",         "type": "paper"},
-    {"name": "bioRxiv: Pharmacology",      "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=pharmacology_and_toxicology", "type": "paper"},
-    {"name": "arXiv: q-bio",               "url": "http://export.arxiv.org/rss/q-bio",                                             "type": "paper"},
-    {"name": "arXiv: cs.LG",               "url": "http://export.arxiv.org/rss/cs.LG",                                             "type": "paper"},
+    {"name": "bioRxiv: Bioinformatics",    "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",            "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Synthetic Biology", "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=synthetic_biology",         "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Pharmacology",      "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=pharmacology_and_toxicology", "type": "paper", "lang": "en"},
+    {"name": "arXiv: q-bio",               "url": "http://export.arxiv.org/rss/q-bio",                                             "type": "paper", "lang": "en"},
+    {"name": "arXiv: cs.LG",               "url": "http://export.arxiv.org/rss/cs.LG",                                             "type": "paper", "lang": "en"},
 ]
 
 INTEREST_KEYWORDS = [
