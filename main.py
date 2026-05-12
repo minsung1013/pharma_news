@@ -23,7 +23,36 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-_TREND_FILE = Path("data/trends.json")
+_TREND_FILE     = Path("data/trends.json")
+_SEEN_LINKS_FILE = Path("data/seen_links.json")
+
+
+def _load_seen_links() -> set[str]:
+    if not _SEEN_LINKS_FILE.exists():
+        return set()
+    try:
+        data = json.loads(_SEEN_LINKS_FILE.read_text(encoding="utf-8"))
+        return set(data.keys())
+    except Exception:
+        return set()
+
+
+def _save_seen_links(new_links: list[str]) -> None:
+    _SEEN_LINKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    data: dict = {}
+    if _SEEN_LINKS_FILE.exists():
+        try:
+            data = json.loads(_SEEN_LINKS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    today_str = date.today().strftime("%Y-%m-%d")
+    for link in new_links:
+        if link:
+            data[link] = today_str
+    # 최근 14일치만 보존
+    cutoff = (date.today() - timedelta(days=14)).strftime("%Y-%m-%d")
+    data = {k: v for k, v in data.items() if v >= cutoff}
+    _SEEN_LINKS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _load_prev_trend() -> str | None:
@@ -97,6 +126,19 @@ def main() -> None:
         log.warning("수집된 기사가 없습니다. 종료.")
         return
 
+    seen_links = _load_seen_links()
+    before = len(articles)
+    articles = [a for a in articles if a.get("link") not in seen_links]
+    skipped = before - len(articles)
+    if skipped:
+        log.info(f"과거 중복 기사 {skipped}건 제외 → 신규 {len(articles)}건 처리")
+    if not articles:
+        log.warning("신규 기사가 없습니다 (모두 과거 중복). 종료.")
+        return
+    # 필터 후 ID 재부여
+    for i, a in enumerate(articles):
+        a["id"] = i
+
     # ── [2] LLM 일괄 분류 ─────────────────────────────────────────────────────
     log.info("=== [2] LLM 분류 시작 ===")
     provider    = get_provider()       # gpt-4o-mini: 분류·번역·종합분석
@@ -140,6 +182,9 @@ def main() -> None:
     # ── [7] 메일 조립 & 발송 ─────────────────────────────────────────────────
     log.info("=== [7] 메일 조립 ===")
     html = build_html(articles, highlight_reps, digest, today)
+
+    _save_seen_links([a.get("link", "") for a in articles])
+    log.info(f"Seen links 저장 완료 ({len(articles)}건)")
 
     if args.dry_run:
         out_path = f"digest_{today}.html"

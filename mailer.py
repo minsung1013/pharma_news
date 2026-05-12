@@ -58,15 +58,6 @@ h2 {
   text-transform: uppercase;
 }
 .hl-body { line-height: 1.7; white-space: pre-wrap; }
-.implication {
-  background: #fffde7;
-  border-left: 3px solid #f9a825;
-  padding: 8px 12px;
-  margin-top: 8px;
-  border-radius: 0 4px 4px 0;
-  line-height: 1.7;
-  white-space: pre-wrap;
-}
 .hl-footer { font-size: 12px; color: #888; margin-top: 10px; }
 .digest-block { background: #fff; border: 1px solid #e0e0e0; padding: 14px 16px; border-radius: 6px; }
 .digest-label { font-weight: bold; color: #333; margin: 12px 0 4px; }
@@ -162,10 +153,6 @@ def _highlights_section(highlights: list[dict], all_articles: list[dict]) -> str
             html += f'<div class="hl-title-en">{title_en}</div>'
         html += f'<div class="hl-section">요약</div>'
         html += f'<div class="hl-body">{summary_text}</div>'
-
-        if impl_text:
-            html += f'<div class="hl-section">BD 시사점</div>'
-            html += f'<div class="implication">{impl_text}</div>'
 
         html += f'<div class="hl-footer"><a href="{link}">[원문]</a>'
         if related > 0:
