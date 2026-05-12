@@ -46,7 +46,5 @@ INTEREST_KEYWORDS = [
     "알츠하이머", "치매", "신경퇴행", "아밀로이드",
 ]
 
-MAX_NEWS_PER_SOURCE   = int(os.getenv("MAX_NEWS_PER_SOURCE", "10"))
-MAX_PAPERS_PER_SOURCE = int(os.getenv("MAX_PAPERS_PER_SOURCE", "10"))
 SCRAPE_TIMEOUT_SEC    = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
 ORG_CSV_PATH          = os.getenv("ORG_CSV_PATH", "./data/organizations.csv")
