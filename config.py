@@ -15,20 +15,11 @@ NEWS_SOURCES = [
 ]
 
 PAPER_SOURCES = [
-    # AI in biotech / bioinformatics
-    {"name": "bioRxiv: Bioinformatics",  "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",  "type": "paper", "lang": "en"},
-    # 항암 항체 설계
-    {"name": "bioRxiv: Cancer Biology",  "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=cancer_biology",  "type": "paper", "lang": "en"},
-    # ML/AI 연구
-    {"name": "arXiv: cs.LG",             "url": "http://export.arxiv.org/rss/cs.LG",                                  "type": "paper", "lang": "en"},
-    # 디지털 병리학 (Computer Vision)
-    {"name": "arXiv: cs.CV",             "url": "http://export.arxiv.org/rss/cs.CV",                                  "type": "paper", "lang": "en"},
-    # 단백질 구조 예측·설계 (Biomolecules)
-    {"name": "arXiv: q-bio.BM",          "url": "http://export.arxiv.org/rss/q-bio.BM",                               "type": "paper", "lang": "en"},
-    # 알츠하이머·신경과학 (Neurons and Cognition)
-    {"name": "arXiv: q-bio.NC",          "url": "http://export.arxiv.org/rss/q-bio.NC",                               "type": "paper", "lang": "en"},
-    # PubMed 복합 키워드 검색 (AI신약·항체·단백질·디지털병리·알츠하이머·공간전사체)
-    {"name": "PubMed",                   "url": "https://pubmed.ncbi.nlm.nih.gov/rss/search/1bCr63ThlO2XEg53wBj-I0_CPCaOtutMDPCVGo2oNVszJgDskJ/?limit=15", "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Bioinformatics",    "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",             "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Synthetic Biology", "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=synthetic_biology",          "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Pharmacology",      "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=pharmacology_and_toxicology", "type": "paper", "lang": "en"},
+    {"name": "arXiv: q-bio",               "url": "http://export.arxiv.org/rss/q-bio",                                              "type": "paper", "lang": "en"},
+    {"name": "arXiv: cs.LG",               "url": "http://export.arxiv.org/rss/cs.LG",                                              "type": "paper", "lang": "en"},
 ]
 
 INTEREST_KEYWORDS = [
@@ -55,5 +46,7 @@ INTEREST_KEYWORDS = [
     "알츠하이머", "치매", "신경퇴행", "아밀로이드",
 ]
 
-SCRAPE_TIMEOUT_SEC = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
-ORG_CSV_PATH       = os.getenv("ORG_CSV_PATH", "./data/organizations.csv")
+MAX_NEWS_PER_SOURCE   = int(os.getenv("MAX_NEWS_PER_SOURCE", "10"))
+MAX_PAPERS_PER_SOURCE = int(os.getenv("MAX_PAPERS_PER_SOURCE", "10"))
+SCRAPE_TIMEOUT_SEC    = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
+ORG_CSV_PATH          = os.getenv("ORG_CSV_PATH", "./data/organizations.csv")

@@ -26,7 +26,7 @@ def _parse_published(entry) -> Optional[datetime]:
     return None
 
 
-def fetch_source(source: dict) -> list[dict]:
+def fetch_source(source: dict, max_items: int = 0) -> list[dict]:
     try:
         feed = feedparser.parse(
             source["url"],
@@ -43,7 +43,8 @@ def fetch_source(source: dict) -> list[dict]:
     cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=24)
     items = []
 
-    for entry in feed.entries:
+    entries = feed.entries[:max_items] if max_items > 0 else feed.entries
+    for entry in entries:
         published = _parse_published(entry)
 
         if published and published < cutoff:
@@ -78,13 +79,15 @@ def fetch_source(source: dict) -> list[dict]:
 def fetch_all(
     news_sources: list[dict],
     paper_sources: list[dict],
+    max_news: int = 0,
+    max_papers: int = 0,
 ) -> list[dict]:
     articles: list[dict] = []
 
     for src in news_sources:
-        articles.extend(fetch_source(src))
+        articles.extend(fetch_source(src, max_news))
     for src in paper_sources:
-        articles.extend(fetch_source(src))
+        articles.extend(fetch_source(src, max_papers))
 
     for i, a in enumerate(articles):
         a['id'] = i

@@ -106,6 +106,7 @@ def main() -> None:
 
     from config import (
         NEWS_SOURCES, PAPER_SOURCES,
+        MAX_NEWS_PER_SOURCE, MAX_PAPERS_PER_SOURCE,
         SCRAPE_TIMEOUT_SEC, ORG_CSV_PATH,
     )
     from fetcher             import fetch_all
@@ -121,7 +122,7 @@ def main() -> None:
 
     # ── [1] RSS 수집 ──────────────────────────────────────────────────────────
     log.info("=== [1] RSS 수집 시작 ===")
-    articles = fetch_all(NEWS_SOURCES, PAPER_SOURCES)
+    articles = fetch_all(NEWS_SOURCES, PAPER_SOURCES, MAX_NEWS_PER_SOURCE, MAX_PAPERS_PER_SOURCE)
     if not articles:
         log.warning("수집된 기사가 없습니다. 종료.")
         return
