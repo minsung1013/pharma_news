@@ -115,7 +115,6 @@ def main() -> None:
     from summarizer          import summarize_highlight, generate_digest
     from mailer              import build_html, send_mail
     from providers           import get_provider, get_bd_provider
-    from capability_updater  import get_lg_capabilities, format_for_prompt
 
     today = date.today().strftime("%Y-%m-%d")
 
@@ -141,8 +140,8 @@ def main() -> None:
 
     # ── [2] LLM 일괄 분류 ─────────────────────────────────────────────────────
     log.info("=== [2] LLM 분류 시작 ===")
-    provider    = get_provider()       # gpt-4o-mini: 분류·번역·종합분석
-    bd_provider = get_bd_provider()    # gpt-4.1: 하이라이트 BD 시사점
+    provider    = get_provider()    # gpt-4o-mini: 분류·번역
+    bd_provider = get_bd_provider() # gpt-5.4: 하이라이트 요약·종합 트렌드 분석
     articles = classify(articles, provider)
 
     # ── [3] 조직 CSV 누적 ─────────────────────────────────────────────────────
@@ -164,18 +163,15 @@ def main() -> None:
 
     # ── [5] 하이라이트 상세 요약 ──────────────────────────────────────────────
     log.info("=== [5] 하이라이트 LLM 요약 ===")
-    log.info("LG AI 역량 로드 중 (캐시 or 웹 검색)...")
-    lg_caps = get_lg_capabilities(provider)
-    lg_caps_str = format_for_prompt(lg_caps)
     for h in highlight_reps:
-        h["_detail"] = summarize_highlight(h, h["_body"], bd_provider, lg_capabilities=lg_caps_str)
+        h["_detail"] = summarize_highlight(h, h["_body"], bd_provider)
 
     # ── [6] 종합 분석 ─────────────────────────────────────────────────────────
     log.info("=== [6] 종합 분석 ===")
     prev_trend = _load_prev_trend()
     if prev_trend:
         log.info("전날 트렌드 로드 완료 — 맥락 유지 모드")
-    digest = generate_digest(articles, provider, prev_trend=prev_trend)
+    digest = generate_digest(articles, bd_provider, prev_trend=prev_trend)
     if digest and digest.get("trend"):
         _save_trend(today, digest["trend"])
 

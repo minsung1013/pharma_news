@@ -6,33 +6,16 @@ from providers import LLMProvider
 
 log = logging.getLogger(__name__)
 
-_HIGHLIGHT_SYSTEM_TEMPLATE = """\
-당신은 LG AI연구원 Bio BD(사업 개발)팀을 위한 제약·바이오·AI 산업 애널리스트입니다.
-주어진 본문(또는 논문 abstract)을 한국어로 깊이 있게 요약하고, BD 시사점을 작성하세요.
-
-## LG AI연구원 Bio BD팀 컨텍스트
-LG AI연구원은 AI 기반 신약·바이오 기술을 보유한 연구 조직으로,
-Bio BD팀은 아래 방향으로 사업 기회를 탐색합니다.
-1. **제약사 협업**: 글로벌·국내 제약사를 고객으로 AI 기반 신약 개발에 공동 참여 → 라이선싱·공동개발·수익화
-2. **대학·병원 공동연구**: 임상 데이터 또는 연구 협력 기반의 기술 개발 → 논문·특허·후속 사업화
-3. **국책사업 수주**: 정부 R&D 과제(범부처·보건부·산업부 등)에 AI 연구 역량으로 참여·실행
-4. **창의적 사업 개발**: 위 세 가지에 한정하지 않고 스타트업 기술 투자·인수, 플랫폼 라이선스 아웃,
-   글로벌 컨소시엄 참여 등 새로운 사업 기회도 적극 발굴
-
-## LG AI연구원 최신 기술 역량 (자동 업데이트)
-{lg_capabilities}
+_HIGHLIGHT_SYSTEM = """\
+당신은 글로벌 제약·바이오·AI 산업 전문 애널리스트입니다.
+주어진 본문(또는 논문 abstract)을 한국어로 깊이 있게 요약하세요.
 
 ## 출력 규칙
 - title_kr: 한국어 제목 (자연스럽게 의역)
-- summary: 본문 핵심 요약 (수치·임상 단계·기술 메커니즘·딜 구조 등 BD 판단에 유용한 디테일 포함)
-- implication: BD 시사점. 아래 구조로 작성하되, 해당 없는 항목은 생략.
-  · **사업 기회 포인트**: 이 기술/뉴스에서 포착 가능한 구체적 사업 기회 (협업·수주·투자 등)
-  · **접근 가능한 파트너**: 협업 또는 고객으로 접근할 수 있는 기관·기업 (구체적 이름 제시)
-  · **LG AI연구원 역량 접점**: 위 보유 역량 중 어떤 기술이 이 기회와 연결되는지 구체적으로 기술
-  · **선제적 액션 제안**: BD팀이 지금 당장 취할 수 있는 구체적 다음 단계 (1~2문장)
+- summary: 본문 핵심 요약 (수치·임상 단계·기술 메커니즘·딜 구조 등 유용한 디테일 포함)
 
 반드시 JSON으로만 응답:
-{{"title_kr": "...", "summary": "...", "implication": "..."}}
+{{"title_kr": "...", "summary": "..."}}
 """
 
 _HIGHLIGHT_USER = """\
@@ -87,11 +70,7 @@ def summarize_highlight(
     article: dict,
     body: str,
     provider: LLMProvider,
-    lg_capabilities: str = "",
 ) -> Optional[dict]:
-    system = _HIGHLIGHT_SYSTEM_TEMPLATE.format(
-        lg_capabilities=lg_capabilities or "• (역량 정보 로드 실패 — 기본 분석 수행)"
-    )
     user = _HIGHLIGHT_USER.format(
         title=article.get("title", ""),
         type=article.get("type", ""),
@@ -100,7 +79,7 @@ def summarize_highlight(
         body=body[:7_000],
     )
     label = article.get("title", "")[:50]
-    return _safe_call(provider, system, user, label=label)
+    return _safe_call(provider, _HIGHLIGHT_SYSTEM, user, label=label)
 
 
 def generate_digest(
