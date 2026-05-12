@@ -15,11 +15,8 @@ NEWS_SOURCES = [
 ]
 
 PAPER_SOURCES = [
-    {"name": "bioRxiv: Bioinformatics",    "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",             "type": "paper", "lang": "en"},
-    {"name": "bioRxiv: Synthetic Biology", "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=synthetic_biology",          "type": "paper", "lang": "en"},
-    {"name": "bioRxiv: Pharmacology",      "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=pharmacology_and_toxicology", "type": "paper", "lang": "en"},
-    {"name": "arXiv: q-bio",               "url": "http://export.arxiv.org/rss/q-bio",                                              "type": "paper", "lang": "en"},
-    {"name": "arXiv: cs.LG",               "url": "http://export.arxiv.org/rss/cs.LG",                                              "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Bioinformatics", "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=bioinformatics",             "type": "paper", "lang": "en"},
+    {"name": "bioRxiv: Pharmacology",   "url": "https://connect.biorxiv.org/biorxiv_xml.php?subject=pharmacology_and_toxicology", "type": "paper", "lang": "en"},
 ]
 
 INTEREST_KEYWORDS = [
