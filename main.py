@@ -23,7 +23,6 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-_TREND_FILE     = Path("data/trends.json")
 _SEEN_LINKS_FILE = Path("data/seen_links.json")
 
 
@@ -53,32 +52,6 @@ def _save_seen_links(new_links: list[str]) -> None:
     cutoff = (date.today() - timedelta(days=14)).strftime("%Y-%m-%d")
     data = {k: v for k, v in data.items() if v >= cutoff}
     _SEEN_LINKS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def _load_prev_trend() -> str | None:
-    if not _TREND_FILE.exists():
-        return None
-    try:
-        data = json.loads(_TREND_FILE.read_text(encoding="utf-8"))
-        yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-        return data.get(yesterday)
-    except Exception:
-        return None
-
-
-def _save_trend(date_str: str, trend: str) -> None:
-    _TREND_FILE.parent.mkdir(parents=True, exist_ok=True)
-    data: dict = {}
-    if _TREND_FILE.exists():
-        try:
-            data = json.loads(_TREND_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    data[date_str] = trend
-    # 최근 14일치만 보존
-    for old_key in sorted(data)[:-14]:
-        del data[old_key]
-    _TREND_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _dedup_representatives(articles: list[dict], highlights_only: bool = False) -> list[dict]:
@@ -168,12 +141,7 @@ def main() -> None:
 
     # ── [6] 종합 분석 ─────────────────────────────────────────────────────────
     log.info("=== [6] 종합 분석 ===")
-    prev_trend = _load_prev_trend()
-    if prev_trend:
-        log.info("전날 트렌드 로드 완료 — 맥락 유지 모드")
-    digest = generate_digest(articles, bd_provider, prev_trend=prev_trend)
-    if digest and digest.get("trend"):
-        _save_trend(today, digest["trend"])
+    digest = generate_digest(articles, bd_provider)
 
     # ── [7] 메일 조립 & 발송 ─────────────────────────────────────────────────
     log.info("=== [7] 메일 조립 ===")

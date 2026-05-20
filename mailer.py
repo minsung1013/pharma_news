@@ -112,8 +112,6 @@ def _digest_section(digest: Optional[dict]) -> str:
         return "<p><em>종합 분석 생성 실패</em></p>"
 
     html = '<div class="digest-block">'
-    if trend := digest.get("trend"):
-        html += f'<div class="digest-label">핵심 트렌드</div><p>{_e(trend)}</p>'
     if movements := digest.get("movements"):
         html += '<div class="digest-label">빅파마·바이오텍 주요 움직임</div><ul>'
         html += "".join(f"<li>{_e(m)}</li>" for m in movements)
