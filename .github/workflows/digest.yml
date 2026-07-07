@@ -51,6 +51,17 @@ jobs:
       - name: Run digest
         run: python main.py
 
+      - name: Generate narration audio (edge-tts)
+        continue-on-error: true      # TTS 실패가 디제스트를 막지 않도록
+        run: python -m tts.make_audio
+
+      - name: Publish audio to GitHub Release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUDIO_RELEASE_TAG: audio
+        run: bash tts/publish_release.sh
+
       - name: Commit data
         run: |
           git config user.name "github-actions[bot]"

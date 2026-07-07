@@ -1,0 +1,6 @@
+# 로컬 TTS 파이프라인 전용 (.venv-tts 에 설치)
+# edge-tts: 무료 Microsoft 뉴럴 보이스 (GPU 불필요, 인터넷 필요)
+edge-tts>=6.1
+flask>=3.0
+playwright>=1.40
+python-dotenv>=1.0
