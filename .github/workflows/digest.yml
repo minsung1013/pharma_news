@@ -48,6 +48,9 @@ jobs:
       - name: Install Playwright (Chromium)
         run: playwright install --with-deps chromium
 
+      - name: Install ffmpeg (TTS mp3 concat)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Run digest
         run: python main.py
 
