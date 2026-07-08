@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -66,6 +67,117 @@ def _dedup_representatives(articles: list[dict], highlights_only: bool = False) 
             seen.add(gid)
             reps.append(a)
     return reps
+
+
+def _prepare_podcast(
+    articles: list[dict],
+    highlight_reps: list[dict],
+    digest: dict | None,
+    today: str,
+) -> None:
+    """팟캐스트용 다이제스트 JSON 생성 + '중요 뉴스 원문' 선별.
+
+    - 하이라이트 상세요약 / 종합 / 전체 한문장 요약을 저장한다.
+    - AI·M&A·협업 규칙 점수 상위 기사를 목표 분량(30분)까지 원문으로 채택하고,
+      채택된 기사에는 a['is_podcast']=True 를 표시(메일 배지용)한다.
+    - 실패해도 메일 발송을 막지 않도록 예외를 삼킨다.
+    """
+    try:
+        import config as cfg
+        from podcast_select import rank_for_podcast, est_seconds
+        from scraper import scrape_article
+        from tts import textprep, config as tcfg
+
+        reps = _dedup_representatives(articles)
+
+        highlights = []
+        for h in highlight_reps:
+            d = h.get("_detail") or {}
+            highlights.append({
+                "title_kr": d.get("title_kr") or h.get("title", ""),
+                "title":    h.get("title", ""),
+                "summary":  d.get("summary") or h.get("korean_summary", ""),
+                "category": h.get("category", ""),
+                "keywords": h.get("matched_keywords", []),
+                "link":     h.get("link", ""),
+                "lang":     h.get("lang", "ko"),
+            })
+
+        summaries = [{
+            "title":          a.get("title", ""),
+            "korean_summary": a.get("korean_summary") or a.get("title", ""),
+            "source":         a.get("source", ""),
+            "lang":           a.get("lang", "ko"),
+            "link":           a.get("link", ""),
+        } for a in reps]
+
+        # 고정부(인트로+하이라이트+종합+전체요약) 낭독 길이 추정
+        fixed = 12.0  # 인트로/아웃트로/안내 멘트 여유(초)
+        for h in highlights:
+            fixed += est_seconds(f"{h['title_kr']} {h['summary']}", "ko")
+        if digest:
+            fixed += est_seconds(" ".join(digest.get("movements", [])), "ko")
+        for s in summaries:
+            fixed += est_seconds(s["korean_summary"], "ko")
+
+        target = tcfg.PODCAST_TARGET_MIN * 60
+        maxn = tcfg.PODCAST_MAX_FULLTEXT
+        log.info(f"팟캐스트 고정부 추정 {fixed/60:.1f}분 / 목표 {tcfg.PODCAST_TARGET_MIN}분")
+
+        ranked = rank_for_podcast(reps)
+        body_cache = {h["link"]: h.get("_body") for h in highlight_reps if h.get("_body")}
+
+        fulltext: list[dict] = []
+        running = fixed
+        for a in ranked:
+            if running >= target or len(fulltext) >= maxn:
+                break
+            link = a.get("link")
+            if not link:
+                continue
+            raw = body_cache.get(link)
+            if not raw:
+                art = scrape_article(link, timeout_sec=cfg.SCRAPE_TIMEOUT_SEC)
+                raw = art["body"] if art else None
+            if not raw:
+                continue
+            clean = textprep.clean_for_tts(raw)
+            if len(clean) < 200:
+                continue
+            lang = a.get("lang", "ko")
+            est = est_seconds(clean, lang)
+            title = re.sub(r"\s*[-|·]\s*[^-|·]{1,20}$", "", a.get("title", "")).strip() or a.get("title", "")
+            fulltext.append({
+                "title":   title,
+                "body":    clean,
+                "lang":    lang,
+                "link":    link,
+                "source":  a.get("source", ""),
+                "reasons": a.get("_podcast_reasons", []),
+                "est_sec": round(est, 1),
+            })
+            a["is_podcast"] = True
+            running += est
+            reasons = ",".join(a.get("_podcast_reasons") or ["-"])
+            log.info(f"  원문 채택 [{reasons}] {title[:40]} (+{est/60:.1f}분 → 누적 {running/60:.1f}분)")
+
+        dg = {
+            "date":             today,
+            "highlights":       highlights,
+            "movements":        (digest or {}).get("movements", []),
+            "summaries":        summaries,
+            "podcast_fulltext": fulltext,
+        }
+        out = Path(f"data/digest_{today}.json")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(dg, ensure_ascii=False, indent=2), encoding="utf-8")
+        log.info(
+            f"팟캐스트 데이터 저장 → {out} "
+            f"(하이라이트 {len(highlights)}, 요약 {len(summaries)}, 원문 {len(fulltext)}, "
+            f"추정 총 {running/60:.1f}분)"
+        )
+    except Exception as e:
+        log.warning(f"팟캐스트 데이터 준비 실패(디제스트는 계속): {e}")
 
 
 def main() -> None:
@@ -142,6 +254,10 @@ def main() -> None:
     # ── [6] 종합 분석 ─────────────────────────────────────────────────────────
     log.info("=== [6] 종합 분석 ===")
     digest = generate_digest(articles, bd_provider)
+
+    # ── [6.5] 팟캐스트 데이터 준비 (JSON 저장 + 원문 선별) ───────────────────
+    log.info("=== [6.5] 팟캐스트 데이터 준비 ===")
+    _prepare_podcast(articles, highlight_reps, digest, today)
 
     # ── [7] 메일 조립 & 발송 ─────────────────────────────────────────────────
     log.info("=== [7] 메일 조립 ===")

@@ -39,12 +39,12 @@ def _chunk(text: str) -> list[str]:
     return chunks or [text[:_MAX_CHARS]]
 
 
-async def _synth_chunk(text: str, out: Path) -> None:
+async def _synth_chunk(text: str, out: Path, voice: str | None = None) -> None:
     import edge_tts
 
     comm = edge_tts.Communicate(
         text,
-        config.EDGE_VOICE,
+        voice or config.EDGE_VOICE,
         rate=config.EDGE_RATE,
         volume=config.EDGE_VOLUME,
     )
@@ -67,15 +67,32 @@ def _concat_mp3(parts: list[Path], out_mp3: Path) -> None:
     Path(list_path).unlink(missing_ok=True)
 
 
-def synthesize(text: str, out_mp3: Path, speed: float | None = None) -> Path:
+def synthesize(text: str, out_mp3: Path, voice: str | None = None) -> Path:
     """text 를 낭독하여 out_mp3(mp3) 로 저장하고 경로를 반환."""
+    return synthesize_segments([(text, voice)], out_mp3)
+
+
+def synthesize_segments(segments: list[tuple[str, str | None]], out_mp3: Path) -> Path:
+    """(text, voice) 세그먼트 목록을 순서대로 낭독해 하나의 mp3 로 이어붙인다.
+
+    voice 가 None 이면 config.EDGE_VOICE(기본 한국어)를 사용한다.
+    한국어/영어 등 언어별 보이스를 세그먼트마다 다르게 줄 수 있다.
+    """
     out_mp3.parent.mkdir(parents=True, exist_ok=True)
-    chunks = _chunk(text)
     with tempfile.TemporaryDirectory() as td:
         parts: list[Path] = []
-        for i, ch in enumerate(chunks):
-            part = Path(td) / f"part_{i:03d}.mp3"
-            asyncio.run(_synth_chunk(ch, part))
-            parts.append(part)
+        idx = 0
+        for text, voice in segments:
+            if not text or not text.strip():
+                continue
+            for ch in _chunk(text):
+                part = Path(td) / f"seg_{idx:04d}.mp3"
+                asyncio.run(_synth_chunk(ch, part, voice))
+                # 빈 오디오(합성 실패)면 건너뜀
+                if part.exists() and part.stat().st_size > 0:
+                    parts.append(part)
+                    idx += 1
+        if not parts:
+            raise RuntimeError("합성된 오디오 세그먼트가 없습니다.")
         _concat_mp3(parts, out_mp3)
     return out_mp3

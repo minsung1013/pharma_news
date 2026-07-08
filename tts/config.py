@@ -15,6 +15,9 @@ AUDIO_DIR     = DATA_DIR / "audio"          # MP3 저장 (gitignore)
 EPISODES_JSON = AUDIO_DIR / "episodes.json"  # 에피소드 메타 누적
 FEED_PATH     = AUDIO_DIR / "feed.xml"       # 생성된 RSS
 SEEN_LINKS    = DATA_DIR / "seen_links.json"
+COVER_PATH    = AUDIO_DIR / "cover.png"      # 팟캐스트 커버 아트 (repo 커밋)
+# 하루치 다이제스트 JSON (main.py 가 생성 → make_audio 가 소비). 날짜별.
+DIGEST_JSON_DIR = DATA_DIR
 
 # ── 국내(한국어) 기사 판별 호스트 ─────────────────────────────────────────
 KOREAN_HOSTS = {"www.biotimes.co.kr", "biotimes.co.kr", "www.ibric.org", "ibric.org"}
@@ -22,10 +25,16 @@ KOREAN_HOSTS = {"www.biotimes.co.kr", "biotimes.co.kr", "www.ibric.org", "ibric.
 # ── TTS (edge-tts) ─────────────────────────────────────────────────────────
 # 한국어 뉴럴 보이스: ko-KR-SunHiNeural(여) / ko-KR-InJoonNeural(남)
 EDGE_VOICE  = os.getenv("EDGE_VOICE", "ko-KR-SunHiNeural")
+# 영어 기사 원문 낭독용 보이스 (영어는 영어로)
+EDGE_VOICE_EN = os.getenv("EDGE_VOICE_EN", "en-US-AriaNeural")
 EDGE_RATE   = os.getenv("EDGE_RATE", "+0%")     # 예: "+10%" 로 빠르게
 EDGE_VOLUME = os.getenv("EDGE_VOLUME", "+0%")
 MIN_BODY_CHARS = int(os.getenv("TTS_MIN_BODY_CHARS", "200"))
 SCRAPE_TIMEOUT_SEC = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
+
+# 팟캐스트 목표 분량(분). 중요뉴스 원문을 이 시간까지 채운다. (main.py 에서 사용)
+PODCAST_TARGET_MIN   = int(os.getenv("PODCAST_TARGET_MIN", "30"))
+PODCAST_MAX_FULLTEXT = int(os.getenv("PODCAST_MAX_FULLTEXT", "15"))
 
 # ── 팟캐스트 / 호스팅 ──────────────────────────────────────────────────────
 # 서버리스(GitHub Releases) 호스팅이 기본. MP3 는 릴리스 애셋으로 올라가고
@@ -41,10 +50,22 @@ AUDIO_BASE_URL = os.getenv(
 ).rstrip("/")
 
 PODCAST_BASE_URL = os.getenv("PODCAST_BASE_URL", f"https://github.com/{GH_REPO}").rstrip("/")
-PODCAST_TITLE    = os.getenv("PODCAST_TITLE", "국내 바이오·제약 뉴스 낭독")
-PODCAST_DESC     = os.getenv("PODCAST_DESC", "매일 수집한 국내 기사 원문을 edge-tts로 낭독한 오디오")
-PODCAST_AUTHOR   = os.getenv("PODCAST_AUTHOR", "pharma_news")
+PODCAST_TITLE    = os.getenv("PODCAST_TITLE", "흑염소 바이오 뉴스")
+PODCAST_DESC     = os.getenv(
+    "PODCAST_DESC",
+    "매일 아침 제약·바이오·AI 뉴스를 흑염소가 브리핑합니다. "
+    "핵심 하이라이트 요약과 전체 기사 요약, 그리고 주요 뉴스 원문 낭독까지 하나의 에피소드로.",
+)
+PODCAST_AUTHOR   = os.getenv("PODCAST_AUTHOR", "흑염소 바이오 뉴스")
 PODCAST_LANG     = os.getenv("PODCAST_LANG", "ko")
+PODCAST_OWNER_EMAIL = os.getenv("PODCAST_OWNER_EMAIL", "podcast@example.com")
+
+# 커버 아트 URL (repo 에 커밋된 cover.png 를 raw 로 서빙)
+_GH_BRANCH = os.getenv("GITHUB_REF_NAME", "main")
+COVER_URL = os.getenv(
+    "PODCAST_COVER_URL",
+    f"https://raw.githubusercontent.com/{GH_REPO}/{_GH_BRANCH}/data/audio/cover.png",
+)
 
 # 피드에 유지할 최근 일수 (episodes.json 도 이 범위로 정리)
 FEED_RETENTION_DAYS = int(os.getenv("FEED_RETENTION_DAYS", "30"))

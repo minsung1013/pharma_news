@@ -66,7 +66,21 @@ a:hover { text-decoration: underline; }
 hr { border: none; border-top: 1px solid #e0e0e0; margin: 28px 0; }
 .en-sub { color: #888; font-size: 12px; }
 .hl-title-en { font-size: 12px; color: #888; margin-top: 2px; margin-bottom: 8px; }
+.podcast-badge {
+  display: inline-block;
+  background: #7d3cff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
 """
+
+_PODCAST_BADGE = '<span class="podcast-badge">🎙 PODCAST</span>'
 
 
 def _e(text: str) -> str:
@@ -95,15 +109,16 @@ def _news_section(articles: list[dict], item_type: str) -> str:
             link    = a.get("link", "#")
             is_en   = a.get("lang") == "en"
             orig_en = _e(a.get("title", ""))
+            badge   = _PODCAST_BADGE if a.get("is_podcast") else ""
 
             if is_en:
                 html += (
-                    f'<div class="item">• {korean}'
+                    f'<div class="item">• {badge}{korean}'
                     f' <span class="en-sub">/ {orig_en}</span>'
                     f' <a href="{link}">[link]</a></div>'
                 )
             else:
-                html += f'<div class="item">• {korean} <a href="{link}">[링크]</a></div>'
+                html += f'<div class="item">• {badge}{korean} <a href="{link}">[링크]</a></div>'
     return html
 
 
@@ -144,9 +159,10 @@ def _highlights_section(highlights: list[dict], all_articles: list[dict]) -> str
         link          = h.get("link", "#")
         is_en         = h.get("lang") == "en"
 
+        badge = _PODCAST_BADGE if h.get("is_podcast") else ""
         html += f'<div class="highlight-card">'
         html += f'<div class="hl-category">🏷 {category}</div>'
-        html += f'<div class="hl-title">{title_kr}</div>'
+        html += f'<div class="hl-title">{badge}{title_kr}</div>'
         if is_en and title_kr != title_en:
             html += f'<div class="hl-title-en">{title_en}</div>'
         html += f'<div class="hl-section">요약</div>'

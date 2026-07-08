@@ -1,15 +1,21 @@
-"""오늘자(또는 지정일) 국내 기사 원문 → TTS MP3 → 팟캐스트 피드 갱신.
+"""오늘자(또는 지정일) 다이제스트 → **하나의** 팟캐스트 에피소드(MP3) 생성.
+
+main.py 가 남긴 ``data/digest_<date>.json`` 을 읽어 아래 구성으로 낭독을 이어붙인다.
+
+  [인트로]  "YYYY년 MM월 DD일, 흑염소 바이오 뉴스 브리핑입니다."
+  [1부]     상위 하이라이트 상세 요약
+  [2부]     오늘의 종합 (빅파마·바이오텍 주요 움직임)
+  [3부]     오늘 수집된 전체 기사 한 문장 요약
+  [4부]     주요 뉴스 원문 낭독 (한국어는 한국어 / 영어는 영어 보이스)
+  [아웃트로]
+
+기사당 파일 1개가 아니라 **하루 1개 에피소드**만 만든다.
 
 실행:
   python -m tts.make_audio                 # 오늘 날짜
-  python -m tts.make_audio --date 2026-07-07
-  python -m tts.make_audio --limit 5       # 테스트용 소량
-
-메인 디제스트(GitHub Actions)가 커밋한 seen_links.json 을 기준으로,
-국내 호스트 + 해당 날짜의 신규 링크만 낭독 대상으로 삼는다.
+  python -m tts.make_audio --date 2026-07-09
 """
 import argparse
-import hashlib
 import json
 import logging
 import re
@@ -17,14 +23,13 @@ import subprocess
 import sys
 from datetime import date, datetime, timedelta, timezone
 from email.utils import format_datetime, parsedate_to_datetime
-from urllib.parse import urlparse
+from pathlib import Path
 
-# 상위 프로젝트 모듈(scraper) 임포트를 위해 루트 경로 확보
-sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
+# 상위 프로젝트 모듈 임포트를 위해 루트 경로 확보
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tts import config, feed, textprep  # noqa: E402
-from tts.engine import synthesize        # noqa: E402
-from scraper import scrape_article       # noqa: E402
+from tts import config, feed          # noqa: E402
+from tts.engine import synthesize_segments  # noqa: E402
 
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -33,24 +38,27 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
                     datefmt="%H:%M:%S", stream=sys.stdout)
 log = logging.getLogger("make_audio")
 
-
-def _korean_links_for(target: str) -> list[str]:
-    data = json.loads(config.SEEN_LINKS.read_text(encoding="utf-8"))
-    out = []
-    for url, seen in data.items():
-        if seen != target:
-            continue
-        if urlparse(url).hostname in config.KOREAN_HOSTS:
-            out.append(url)
-    return out
+_DATE_MP3 = re.compile(r"^\d{4}-\d{2}-\d{2}\.mp3$")
+_BULLET = re.compile(r"^[\s•\-*·]+", re.MULTILINE)
 
 
-def _file_for(url: str, seen: str) -> str:
-    h = hashlib.md5(url.encode("utf-8")).hexdigest()[:10]
-    return f"{seen}_{h}.mp3"
+def _digest_path(date_str: str) -> Path:
+    return config.DIGEST_JSON_DIR / f"digest_{date_str}.json"
 
 
-def _probe_duration(path) -> float | None:
+def _speak(text: str) -> str:
+    """낭독용 정리: 불릿 기호·과도한 공백/개행 → 문장 흐름으로."""
+    if not text:
+        return ""
+    text = _BULLET.sub("", text)
+    text = text.replace("•", " ")
+    text = re.sub(r"\s*\n+\s*", ". ", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\.{2,}", ".", text)
+    return text.strip()
+
+
+def _probe_duration(path: Path) -> float | None:
     try:
         r = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -62,76 +70,118 @@ def _probe_duration(path) -> float | None:
         return None
 
 
+def _build_segments(dg: dict, date_str: str) -> list[tuple[str, str | None]]:
+    ko = config.EDGE_VOICE
+    en = config.EDGE_VOICE_EN
+    y, m, d = date_str.split("-")
+    segs: list[tuple[str, str | None]] = []
+
+    # ── 인트로 ──
+    segs.append((f"{y}년 {int(m)}월 {int(d)}일, 흑염소 바이오 뉴스 브리핑입니다.", ko))
+
+    # ── 1부: 하이라이트 ──
+    highlights = dg.get("highlights") or []
+    if highlights:
+        segs.append((f"먼저, 오늘의 핵심 하이라이트 {len(highlights)}건입니다.", ko))
+        for i, h in enumerate(highlights, 1):
+            title = h.get("title_kr") or h.get("title") or ""
+            summary = _speak(h.get("summary") or "")
+            segs.append((f"{i}번. {title}. {summary}", ko))
+
+    # ── 2부: 종합 ──
+    movements = dg.get("movements") or []
+    if movements:
+        segs.append(("다음은, 오늘의 종합입니다. 빅파마와 바이오텍의 주요 움직임입니다.", ko))
+        segs.append((_speak(". ".join(movements)), ko))
+
+    # ── 3부: 전체 기사 한 문장 요약 ──
+    summaries = dg.get("summaries") or []
+    if summaries:
+        segs.append((f"이어서, 오늘 수집된 전체 기사 {len(summaries)}건을 한 문장씩 요약해 드립니다.", ko))
+        # 한 세그먼트에 몰아 넣으면 청킹이 알아서 나눔
+        joined = ". ".join(_speak(s.get("korean_summary") or s.get("title") or "") for s in summaries)
+        segs.append((joined, ko))
+
+    # ── 4부: 주요 뉴스 원문 낭독 ──
+    fulltext = dg.get("podcast_fulltext") or []
+    if fulltext:
+        segs.append((f"마지막으로, 오늘의 주요 뉴스 {len(fulltext)}건을 원문으로 자세히 전해 드립니다.", ko))
+        for i, it in enumerate(fulltext, 1):
+            lang = it.get("lang", "ko")
+            voice = en if lang == "en" else ko
+            title = it.get("title") or ""
+            body = it.get("body") or ""
+            # 각 꼭지 앞에 한국어 안내 (번호), 이후 제목+본문은 해당 언어 보이스
+            segs.append((f"주요 뉴스 {i}.", ko))
+            segs.append((f"{title}. {body}", voice))
+
+    # ── 아웃트로 ──
+    segs.append(("이상 흑염소 바이오 뉴스였습니다. 내일 아침 다시 찾아뵙겠습니다.", ko))
+    return segs
+
+
+def _episode_summary(dg: dict) -> str:
+    nh = len(dg.get("highlights") or [])
+    ns = len(dg.get("summaries") or [])
+    nf = len(dg.get("podcast_fulltext") or [])
+    return f"핵심 하이라이트 {nh}건, 전체 요약 {ns}건, 주요 뉴스 원문 {nf}건."
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description="국내 기사 TTS 오디오 생성")
+    ap = argparse.ArgumentParser(description="흑염소 바이오 뉴스 에피소드 생성")
     ap.add_argument("--date", default=date.today().strftime("%Y-%m-%d"))
-    ap.add_argument("--limit", type=int, default=0, help="0 = 전체")
     args = ap.parse_args()
+    date_str = args.date
 
-    links = _korean_links_for(args.date)
-    log.info(f"[{args.date}] 국내 신규 링크 {len(links)}건")
-    if args.limit:
-        links = links[: args.limit]
+    dpath = _digest_path(date_str)
+    if not dpath.exists():
+        log.error(f"다이제스트 JSON 없음: {dpath} — main.py 를 먼저 실행하세요.")
+        sys.exit(1)
+    dg = json.loads(dpath.read_text(encoding="utf-8"))
 
+    segments = _build_segments(dg, date_str)
+    total_chars = sum(len(t) for t, _ in segments)
+    log.info(f"[{date_str}] 세그먼트 {len(segments)}개, 총 {total_chars:,}자 낭독 시작")
+
+    out = config.AUDIO_DIR / f"{date_str}.mp3"
+    synthesize_segments(segments, out)
+    dur = _probe_duration(out)
+    log.info(f"에피소드 생성: {out.name} ({out.stat().st_size/1e6:.1f} MB, "
+             f"{(dur or 0)/60:.1f}분)")
+
+    # ── episodes.json 갱신: 하루 1개 에피소드 체계로 정리 ──
     eps = feed.load_episodes()
-    have = {e["guid"] for e in eps}
-    added = 0
+    # 과거의 '기사당 mp3' 에피소드(날짜.mp3 형식이 아닌 것) 및 같은 날짜 중복 제거
+    kept = [e for e in eps if _DATE_MP3.match(e.get("file", "")) and e.get("guid") != date_str]
+    kept.append({
+        "guid": date_str,
+        "url": config.PODCAST_BASE_URL,
+        "title": f"{config.PODCAST_TITLE} — {date_str}",
+        "file": out.name,
+        "bytes": out.stat().st_size,
+        "duration_sec": dur,
+        "pubDate": format_datetime(
+            datetime.strptime(date_str, "%Y-%m-%d").replace(hour=6, tzinfo=timezone.utc)
+        ),
+        "summary": _episode_summary(dg),
+    })
 
-    for i, url in enumerate(links, 1):
-        if url in have:
-            log.info(f"  ({i}/{len(links)}) SKIP 이미 생성됨")
-            continue
-
-        art = scrape_article(url, timeout_sec=config.SCRAPE_TIMEOUT_SEC)
-        if not art:
-            log.warning(f"  ({i}/{len(links)}) 스크래핑 실패 → 건너뜀")
-            continue
-
-        text = textprep.clean_for_tts(art["body"])
-        if len(text) < config.MIN_BODY_CHARS:
-            log.warning(f"  ({i}/{len(links)}) 본문 짧음({len(text)}자) → 건너뜀")
-            continue
-
-        fname = _file_for(url, args.date)
-        out = config.AUDIO_DIR / fname
-        # 제목 끝 매체명 접미사 제거 (" - 바이오타임즈" 등)
-        title = re.sub(r"\s*[-|·]\s*[^-|·]{1,20}$", "", art["title"]).strip() or art["title"] or "(제목 없음)"
-        log.info(f"  ({i}/{len(links)}) TTS: {title[:50]} ({len(text)}자)")
-
-        # 낭독 스크립트: 제목 먼저 읽고 본문
-        synthesize(f"{title}.\n{text}", out)
-
-        eps.append({
-            "guid": url,
-            "url": url,
-            "title": title,
-            "file": fname,
-            "bytes": out.stat().st_size,
-            "duration_sec": _probe_duration(out),
-            "pubDate": format_datetime(
-                datetime.strptime(args.date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-            ),
-        })
-        have.add(url)
-        added += 1
-
-    # 오래된 에피소드 정리 (피드·episodes.json 을 최근 N일로 유지)
+    # 오래된 에피소드 정리 (최근 N일 유지)
     cutoff = datetime.now(timezone.utc) - timedelta(days=config.FEED_RETENTION_DAYS)
-    kept: list[dict] = []
-    for e in eps:
+    final: list[dict] = []
+    for e in kept:
         try:
             old = parsedate_to_datetime(e["pubDate"]) < cutoff
         except Exception:
             old = False
-        if old:
+        if old and e.get("file") != out.name:
             (config.AUDIO_DIR / e["file"]).unlink(missing_ok=True)
         else:
-            kept.append(e)
-    pruned = len(eps) - len(kept)
+            final.append(e)
 
-    feed.save_episodes(kept)
-    feed.write_feed(kept)
-    log.info(f"완료: {added}건 신규, {pruned}건 정리, 총 {len(kept)}건. 피드 → {config.FEED_PATH}")
+    feed.save_episodes(final)
+    feed.write_feed(final)
+    log.info(f"완료: 총 {len(final)}개 에피소드. 피드 → {config.FEED_PATH}")
 
 
 if __name__ == "__main__":

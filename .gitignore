@@ -7,3 +7,6 @@ digest_*.html
 .venv-tts/
 data/audio/*.mp3
 data/audio/_smoke.mp3
+data/digest_*.json
+.logs/
+.bak/
