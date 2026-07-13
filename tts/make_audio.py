@@ -1,19 +1,19 @@
-"""오늘자(또는 지정일) 다이제스트 → **하나의** 팟캐스트 에피소드(MP3) 생성.
+"""오늘자(또는 지정일) 큐레이션 뉴스 → **하나의** 팟캐스트 에피소드(MP3).
 
-main.py 가 남긴 ``data/digest_<date>.json`` 을 읽어 아래 구성으로 낭독을 이어붙인다.
+main.py 가 남긴 ``data/digest_<date>.json`` 의 items(큐레이션 통과 뉴스)를
+점수 순서대로 낭독한다.
 
-  [인트로]  "YYYY년 MM월 DD일, 흑염소 바이오 뉴스 브리핑입니다."
-  [1부]     상위 하이라이트 상세 요약
-  [2부]     오늘의 종합 (빅파마·바이오텍 주요 움직임)
-  [3부]     오늘 수집된 전체 기사 한 문장 요약
-  [4부]     주요 뉴스 원문 낭독 (한국어는 한국어 / 영어는 영어 보이스)
+  [인트로]
+  각 뉴스마다:
+    [무음 공백] → [전환 멘트(한국어)] → [제목 + 요약]
+                 한국어 기사는 한국어 보이스, 영어 기사는 영어 보이스로 낭독.
   [아웃트로]
 
-기사당 파일 1개가 아니라 **하루 1개 에피소드**만 만든다.
+뉴스 사이에 충분한 공백과 전환 멘트를 넣어 듣기 쉽게 구성한다.
 
 실행:
   python -m tts.make_audio                 # 오늘 날짜
-  python -m tts.make_audio --date 2026-07-09
+  python -m tts.make_audio --date 2026-07-13
 """
 import argparse
 import json
@@ -25,11 +25,10 @@ from datetime import date, datetime, timedelta, timezone
 from email.utils import format_datetime, parsedate_to_datetime
 from pathlib import Path
 
-# 상위 프로젝트 모듈 임포트를 위해 루트 경로 확보
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tts import config, feed          # noqa: E402
-from tts.engine import synthesize_segments  # noqa: E402
+from tts.engine import synthesize_program  # noqa: E402
 
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -39,7 +38,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("make_audio")
 
 _DATE_MP3 = re.compile(r"^\d{4}-\d{2}-\d{2}\.mp3$")
-_BULLET = re.compile(r"^[\s•\-*·]+", re.MULTILINE)
+_WS = re.compile(r"\s+")
 
 
 def _digest_path(date_str: str) -> Path:
@@ -47,14 +46,11 @@ def _digest_path(date_str: str) -> Path:
 
 
 def _speak(text: str) -> str:
-    """낭독용 정리: 불릿 기호·과도한 공백/개행 → 문장 흐름으로."""
+    """낭독용 정리: 과도한 공백/개행 정돈, 불릿 기호 제거."""
     if not text:
         return ""
-    text = _BULLET.sub("", text)
-    text = text.replace("•", " ")
-    text = re.sub(r"\s*\n+\s*", ". ", text)
-    text = re.sub(r"[ \t]{2,}", " ", text)
-    text = re.sub(r"\.{2,}", ".", text)
+    text = text.replace("•", " ").replace("·", " ")
+    text = _WS.sub(" ", text)
     return text.strip()
 
 
@@ -70,61 +66,52 @@ def _probe_duration(path: Path) -> float | None:
         return None
 
 
-def _build_segments(dg: dict, date_str: str) -> list[tuple[str, str | None]]:
+def _build_program(dg: dict, date_str: str) -> list[tuple]:
     ko = config.EDGE_VOICE
     en = config.EDGE_VOICE_EN
+    gap = config.PODCAST_GAP_SEC
     y, m, d = date_str.split("-")
-    segs: list[tuple[str, str | None]] = []
+
+    items = dg.get("items") or []
+    program: list[tuple] = []
 
     # ── 인트로 ──
-    segs.append((f"{y}년 {int(m)}월 {int(d)}일, 흑염소 바이오 뉴스 브리핑입니다.", ko))
+    program.append(("say",
+        f"{y}년 {int(m)}월 {int(d)}일, 흑염소 바이오 뉴스 브리핑입니다. "
+        f"오늘 선별된 뉴스 {len(items)}건을 전해 드립니다.", ko))
+    program.append(("gap", gap * 1.5))
 
-    # ── 1부: 하이라이트 ──
-    highlights = dg.get("highlights") or []
-    if highlights:
-        segs.append((f"먼저, 오늘의 핵심 하이라이트 {len(highlights)}건입니다.", ko))
-        for i, h in enumerate(highlights, 1):
-            title = h.get("title_kr") or h.get("title") or ""
-            summary = _speak(h.get("summary") or "")
-            segs.append((f"{i}번. {title}. {summary}", ko))
+    prev_lang = None
+    for i, it in enumerate(items, 1):
+        lang = it.get("lang", "ko")
+        voice = en if lang == "en" else ko
+        title = _speak(it.get("title", ""))
+        body = _speak(it.get("text", ""))
 
-    # ── 2부: 종합 ──
-    movements = dg.get("movements") or []
-    if movements:
-        segs.append(("다음은, 오늘의 종합입니다. 빅파마와 바이오텍의 주요 움직임입니다.", ko))
-        segs.append((_speak(". ".join(movements)), ko))
+        # ── 전환 멘트(한국어 호스트) ── 언어가 바뀌면 안내를 붙여 이해를 돕는다.
+        if lang == "en":
+            cue = "다음은 영어 기사입니다." if prev_lang != "en" else "다음 영어 소식입니다."
+        else:
+            cue = f"{i}번째 소식입니다."
+        program.append(("gap", gap))
+        program.append(("say", cue, ko))
 
-    # ── 3부: 전체 기사 한 문장 요약 ──
-    summaries = dg.get("summaries") or []
-    if summaries:
-        segs.append((f"이어서, 오늘 수집된 전체 기사 {len(summaries)}건을 한 문장씩 요약해 드립니다.", ko))
-        # 한 세그먼트에 몰아 넣으면 청킹이 알아서 나눔
-        joined = ". ".join(_speak(s.get("korean_summary") or s.get("title") or "") for s in summaries)
-        segs.append((joined, ko))
-
-    # ── 4부: 주요 뉴스 원문 낭독 ──
-    fulltext = dg.get("podcast_fulltext") or []
-    if fulltext:
-        segs.append((f"마지막으로, 오늘의 주요 뉴스 {len(fulltext)}건을 원문으로 자세히 전해 드립니다.", ko))
-        for i, it in enumerate(fulltext, 1):
-            lang = it.get("lang", "ko")
-            voice = en if lang == "en" else ko
-            title = it.get("title") or ""
-            body = it.get("body") or ""
-            # 각 꼭지 앞에 한국어 안내 (번호), 이후 제목+본문은 해당 언어 보이스
-            segs.append((f"주요 뉴스 {i}.", ko))
-            segs.append((f"{title}. {body}", voice))
+        # ── 제목 + 요약 (해당 언어 보이스) ──
+        spoken = f"{title}. {body}" if body else title
+        program.append(("say", spoken, voice))
+        prev_lang = lang
 
     # ── 아웃트로 ──
-    segs.append(("이상 흑염소 바이오 뉴스였습니다. 내일 아침 다시 찾아뵙겠습니다.", ko))
-    return segs
+    program.append(("gap", gap * 1.5))
+    program.append(("say", "이상 흑염소 바이오 뉴스였습니다. 내일 다시 찾아뵙겠습니다.", ko))
+    return program
 
 
 def _episode_summary(dg: dict) -> str:
-    nh = len(dg.get("highlights") or [])
-    ns = len(dg.get("summaries") or [])
-    nf = len(dg.get("podcast_fulltext") or [])
-    return f"핵심 하이라이트 {nh}건, 전체 요약 {ns}건, 주요 뉴스 원문 {nf}건."
+    items = dg.get("items") or []
+    ko = sum(1 for it in items if it.get("lang") != "en")
+    en = len(items) - ko
+    return f"오늘 선별 뉴스 {len(items)}건 (국내 {ko} · 해외 {en})."
 
 
 def main() -> None:
@@ -139,19 +126,17 @@ def main() -> None:
         sys.exit(1)
     dg = json.loads(dpath.read_text(encoding="utf-8"))
 
-    segments = _build_segments(dg, date_str)
-    total_chars = sum(len(t) for t, _ in segments)
-    log.info(f"[{date_str}] 세그먼트 {len(segments)}개, 총 {total_chars:,}자 낭독 시작")
+    program = _build_program(dg, date_str)
+    n_say = sum(1 for p in program if p[0] == "say")
+    log.info(f"[{date_str}] 낭독 세그먼트 {n_say}개 합성 시작")
 
     out = config.AUDIO_DIR / f"{date_str}.mp3"
-    synthesize_segments(segments, out)
+    synthesize_program(program, out)
     dur = _probe_duration(out)
-    log.info(f"에피소드 생성: {out.name} ({out.stat().st_size/1e6:.1f} MB, "
-             f"{(dur or 0)/60:.1f}분)")
+    log.info(f"에피소드 생성: {out.name} ({out.stat().st_size/1e6:.1f} MB, {(dur or 0)/60:.1f}분)")
 
-    # ── episodes.json 갱신: 하루 1개 에피소드 체계로 정리 ──
+    # ── episodes.json 갱신 (하루 1개 에피소드) ──
     eps = feed.load_episodes()
-    # 과거의 '기사당 mp3' 에피소드(날짜.mp3 형식이 아닌 것) 및 같은 날짜 중복 제거
     kept = [e for e in eps if _DATE_MP3.match(e.get("file", "")) and e.get("guid") != date_str]
     kept.append({
         "guid": date_str,
@@ -166,7 +151,6 @@ def main() -> None:
         "summary": _episode_summary(dg),
     })
 
-    # 오래된 에피소드 정리 (최근 N일 유지)
     cutoff = datetime.now(timezone.utc) - timedelta(days=config.FEED_RETENTION_DAYS)
     final: list[dict] = []
     for e in kept:

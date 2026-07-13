@@ -59,12 +59,65 @@ def _concat_mp3(parts: list[Path], out_mp3: Path) -> None:
         for p in parts:
             lf.write(f"file '{p.as_posix()}'\n")
         list_path = lf.name
+    # 재인코딩 접합: edge-tts 청크와 무음(libmp3lame)을 섞어도 타임스탬프가
+    # 깨지지 않도록 단일 mp3 스트림으로 재생성한다(-c copy 시 dts 경고/탐색 이슈 방지).
     subprocess.run(
         ["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
-         "-i", list_path, "-c", "copy", str(out_mp3)],
+         "-i", list_path,
+         "-c:a", "libmp3lame", "-b:a", "48k", "-ar", "24000", "-ac", "1",
+         str(out_mp3)],
         check=True,
     )
     Path(list_path).unlink(missing_ok=True)
+
+
+def _silence(out: Path, seconds: float) -> None:
+    """edge-tts 출력과 동일 포맷(24kHz mono 48k mp3)의 무음 세그먼트 생성.
+
+    동일 포맷이라 concat -c copy 로 안전하게 이어붙는다.
+    """
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error",
+         "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono",
+         "-t", f"{max(0.05, seconds):.2f}",
+         "-c:a", "libmp3lame", "-b:a", "48k", str(out)],
+        check=True,
+    )
+
+
+def synthesize_program(program: list[tuple], out_mp3: Path) -> Path:
+    """낭독 프로그램을 하나의 mp3 로 합성.
+
+    program 항목:
+      ("say", text, voice)  → TTS (voice None 이면 기본 한국어)
+      ("gap", seconds)      → 무음 공백
+    """
+    out_mp3.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as td:
+        parts: list[Path] = []
+        idx = 0
+        for item in program:
+            kind = item[0]
+            if kind == "gap":
+                part = Path(td) / f"seg_{idx:04d}.mp3"
+                _silence(part, float(item[1]))
+                parts.append(part)
+                idx += 1
+                continue
+            # "say"
+            _, text, voice = item
+            if not text or not text.strip():
+                continue
+            for ch in _chunk(text):
+                part = Path(td) / f"seg_{idx:04d}.mp3"
+                asyncio.run(_synth_chunk(ch, part, voice))
+                if part.exists() and part.stat().st_size > 0:
+                    parts.append(part)
+                    idx += 1
+        if not parts:
+            raise RuntimeError("합성된 오디오 세그먼트가 없습니다.")
+        _concat_mp3(parts, out_mp3)
+    return out_mp3
 
 
 def synthesize(text: str, out_mp3: Path, voice: str | None = None) -> Path:

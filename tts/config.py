@@ -29,12 +29,10 @@ EDGE_VOICE  = os.getenv("EDGE_VOICE", "ko-KR-SunHiNeural")
 EDGE_VOICE_EN = os.getenv("EDGE_VOICE_EN", "en-US-AriaNeural")
 EDGE_RATE   = os.getenv("EDGE_RATE", "+0%")     # 예: "+10%" 로 빠르게
 EDGE_VOLUME = os.getenv("EDGE_VOLUME", "+0%")
-MIN_BODY_CHARS = int(os.getenv("TTS_MIN_BODY_CHARS", "200"))
-SCRAPE_TIMEOUT_SEC = int(os.getenv("SCRAPE_TIMEOUT_SEC", "30"))
-
-# 팟캐스트 목표 분량(분). 중요뉴스 원문을 이 시간까지 채운다. (main.py 에서 사용)
-PODCAST_TARGET_MIN   = int(os.getenv("PODCAST_TARGET_MIN", "30"))
-PODCAST_MAX_FULLTEXT = int(os.getenv("PODCAST_MAX_FULLTEXT", "15"))
+# 팟캐스트 낭독 구성 (큐레이션 뉴스 그대로 읽기)
+PODCAST_GAP_SEC       = float(os.getenv("PODCAST_GAP_SEC", "1.0"))    # 뉴스 사이 무음 공백(초)
+PODCAST_MAX_ITEMS     = int(os.getenv("PODCAST_MAX_ITEMS", "0"))      # 낭독 최대 뉴스 수(0=전체)
+PODCAST_MAX_ITEM_CHARS = int(os.getenv("PODCAST_MAX_ITEM_CHARS", "600"))  # 뉴스당 낭독 본문 상한(자)
 
 # ── 팟캐스트 / 호스팅 ──────────────────────────────────────────────────────
 # 서버리스(GitHub Releases) 호스팅이 기본. MP3 는 릴리스 애셋으로 올라가고

@@ -1,7 +1,3 @@
 feedparser
-openai
-playwright
 python-dotenv
-requests
-ddgs
 edge-tts

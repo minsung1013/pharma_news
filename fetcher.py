@@ -10,6 +10,9 @@ log = logging.getLogger(__name__)
 _HTML_TAG   = re.compile(r'<[^>]+>')
 _WHITESPACE = re.compile(r'\s+')
 
+_SUMMARY_MAX = 2_000    # 매칭·표시용 요약 상한
+_CONTENT_MAX = 30_000   # content:encoded(전체 본문) 저장 상한
+
 
 def _strip_html(text: str) -> str:
     return _WHITESPACE.sub(' ', _HTML_TAG.sub(' ', text)).strip()
@@ -26,7 +29,17 @@ def _parse_published(entry) -> Optional[datetime]:
     return None
 
 
-def fetch_source(source: dict) -> list[dict]:
+def _extract_content(entry) -> str:
+    """content:encoded(전체 본문)가 있으면 우선 사용. 없으면 빈 문자열."""
+    content_list = getattr(entry, 'content', None)
+    if content_list:
+        # feedparser: entry.content = [{'value': '...'}, ...]
+        raw = " ".join(c.get('value', '') for c in content_list if c.get('value'))
+        return _strip_html(raw)[:_CONTENT_MAX]
+    return ""
+
+
+def fetch_source(source: dict, window_hours: int = 24) -> list[dict]:
     try:
         feed = feedparser.parse(
             source["url"],
@@ -40,7 +53,7 @@ def fetch_source(source: dict) -> list[dict]:
         log.warning(f"[{source['name']}] bozo feed (no entries): {feed.bozo_exception}")
         return []
 
-    cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=24)
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=window_hours)
     items = []
 
     for entry in feed.entries:
@@ -58,36 +71,31 @@ def fetch_source(source: dict) -> list[dict]:
             or getattr(entry, 'description', '')
             or ''
         )
-        summary = _strip_html(raw_summary)[:1500]
+        summary = _strip_html(raw_summary)[:_SUMMARY_MAX]
+        content = _extract_content(entry)
         link = getattr(entry, 'link', '') or ''
 
         items.append({
             "source":    source["name"],
-            "type":      source["type"],
             "lang":      source.get("lang", "en"),
             "title":     title,
             "summary":   summary,
+            "content":   content,
             "link":      link,
             "published": published.isoformat() if published else None,
         })
 
-    log.info(f"[{source['name']}] {len(items)} items within 24h")
+    log.info(f"[{source['name']}] {len(items)} items within {window_hours}h")
     return items
 
 
-def fetch_all(
-    news_sources: list[dict],
-    paper_sources: list[dict],
-) -> list[dict]:
+def fetch_all(news_sources: list[dict], window_hours: int = 24) -> list[dict]:
     articles: list[dict] = []
-
     for src in news_sources:
-        articles.extend(fetch_source(src))
-    for src in paper_sources:
-        articles.extend(fetch_source(src))
+        articles.extend(fetch_source(src, window_hours=window_hours))
 
     for i, a in enumerate(articles):
         a['id'] = i
 
-    log.info(f"Total fetched: {len(articles)} (news + papers)")
+    log.info(f"Total fetched: {len(articles)}")
     return articles

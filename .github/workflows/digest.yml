@@ -17,20 +17,15 @@ jobs:
       TZ: Asia/Seoul
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-      # ── LLM ────────────────────────────────
-      LLM_PROVIDER: openai
-      OPENAI_MODEL: gpt-4o-mini        # 분류·번역·종합분석
-      OPENAI_MODEL_BD: gpt-5.4          # 하이라이트 BD 시사점 (고성능)
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
       # ── Gmail (Secrets에서 관리) ────────────
       GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
       GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
       RECIPIENTS: ${{ secrets.RECIPIENTS }}
 
-      # ── 운영 옵션 (여기서 직접 수정) ────────
+      # ── 큐레이션 튜닝 (여기서 직접 수정) ────
+      SCORE_THRESHOLD: 3
+      TOP_HIGHLIGHTS: 6
       SCRAPE_TIMEOUT_SEC: 30
-      ORG_CSV_PATH: ./data/organizations.csv
 
     steps:
       - name: Checkout
@@ -44,9 +39,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Install Playwright (Chromium)
-        run: playwright install --with-deps chromium
 
       - name: Install ffmpeg (TTS mp3 concat)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
