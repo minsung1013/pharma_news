@@ -21,7 +21,7 @@
       <title>흑염소 바이오 뉴스</title>
       <link>https://github.com/minsung1013/pharma_news</link>
     </image>
-    <lastBuildDate>Tue, 29 Sep 2026 22:54:43 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 30 Sep 2026 22:51:02 +0000</lastBuildDate>
     <item>
       <title>흑염소 바이오 뉴스 — 2026-09-30</title>
       <guid isPermaLink="false">2026-09-30</guid>
@@ -32,6 +32,17 @@
       <itunes:image href="https://raw.githubusercontent.com/minsung1013/pharma_news/main/data/audio/cover.png"/>
       <itunes:explicit>false</itunes:explicit>
       <description>오늘 선별 뉴스 98건 (국내 52 · 해외 46).</description>
+    </item>
+    <item>
+      <title>흑염소 바이오 뉴스 — 2026-10-01</title>
+      <guid isPermaLink="false">2026-10-01</guid>
+      <link>https://github.com/minsung1013/pharma_news</link>
+      <pubDate>Thu, 01 Oct 2026 06:00:00 +0000</pubDate>
+      <enclosure url="https://github.com/minsung1013/pharma_news/releases/download/audio/2026-10-01.mp3" length="24310605" type="audio/mpeg"/>
+      <itunes:duration>1:07:31</itunes:duration>
+      <itunes:image href="https://raw.githubusercontent.com/minsung1013/pharma_news/main/data/audio/cover.png"/>
+      <itunes:explicit>false</itunes:explicit>
+      <description>오늘 선별 뉴스 100건 (국내 65 · 해외 35).</description>
     </item>
   </channel>
 </rss>
