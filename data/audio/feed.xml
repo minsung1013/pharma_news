@@ -21,7 +21,7 @@
       <title>흑염소 바이오 뉴스</title>
       <link>https://github.com/minsung1013/pharma_news</link>
     </image>
-    <lastBuildDate>Sat, 31 Oct 2026 22:09:09 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 01 Nov 2026 22:35:30 +0000</lastBuildDate>
     <item>
       <title>흑염소 바이오 뉴스 — 2026-10-28</title>
       <guid isPermaLink="false">2026-10-28</guid>
@@ -298,6 +298,17 @@
       <description>오늘 선별 뉴스 16건 (국내 8 · 해외 8).</description>
     </item>
     <item>
+      <title>흑염소 바이오 뉴스 — 2026-11-02</title>
+      <guid isPermaLink="false">2026-11-02</guid>
+      <link>https://github.com/minsung1013/pharma_news</link>
+      <pubDate>Mon, 02 Nov 2026 06:00:00 +0000</pubDate>
+      <enclosure url="https://github.com/minsung1013/pharma_news/releases/download/audio/2026-11-02.mp3" length="5567853" type="audio/mpeg"/>
+      <itunes:duration>15:27</itunes:duration>
+      <itunes:image href="https://raw.githubusercontent.com/minsung1013/pharma_news/main/data/audio/cover.png"/>
+      <itunes:explicit>false</itunes:explicit>
+      <description>오늘 선별 뉴스 23건 (국내 15 · 해외 8).</description>
+    </item>
+    <item>
       <title>흑염소 바이오 뉴스 — 2026-10-30</title>
       <guid isPermaLink="false">2026-10-30</guid>
       <link>https://github.com/minsung1013/pharma_news</link>
@@ -340,17 +351,6 @@
       <itunes:image href="https://raw.githubusercontent.com/minsung1013/pharma_news/main/data/audio/cover.png"/>
       <itunes:explicit>false</itunes:explicit>
       <description>오늘 선별 뉴스 99건 (국내 63 · 해외 36).</description>
-    </item>
-    <item>
-      <title>흑염소 바이오 뉴스 — 2026-10-02</title>
-      <guid isPermaLink="false">2026-10-02</guid>
-      <link>https://github.com/minsung1013/pharma_news</link>
-      <pubDate>Fri, 02 Oct 2026 06:00:00 +0000</pubDate>
-      <enclosure url="https://github.com/minsung1013/pharma_news/releases/download/audio/2026-10-02.mp3" length="21580509" type="audio/mpeg"/>
-      <itunes:duration>59:56</itunes:duration>
-      <itunes:image href="https://raw.githubusercontent.com/minsung1013/pharma_news/main/data/audio/cover.png"/>
-      <itunes:explicit>false</itunes:explicit>
-      <description>오늘 선별 뉴스 85건 (국내 61 · 해외 24).</description>
     </item>
   </channel>
 </rss>
