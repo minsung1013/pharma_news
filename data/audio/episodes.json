@@ -1,15 +1,5 @@
 [
   {
-    "guid": "2026-10-09",
-    "url": "https://github.com/minsung1013/pharma_news",
-    "title": "흑염소 바이오 뉴스 — 2026-10-09",
-    "file": "2026-10-09.mp3",
-    "bytes": 23631645,
-    "duration_sec": 3938.568,
-    "pubDate": "Fri, 09 Oct 2026 06:00:00 +0000",
-    "summary": "오늘 선별 뉴스 99건 (국내 63 · 해외 36)."
-  },
-  {
     "guid": "2026-10-10",
     "url": "https://github.com/minsung1013/pharma_news",
     "title": "흑염소 바이오 뉴스 — 2026-10-10",
@@ -298,5 +288,15 @@
     "duration_sec": 748.224,
     "pubDate": "Sun, 08 Nov 2026 06:00:00 +0000",
     "summary": "오늘 선별 뉴스 18건 (국내 7 · 해외 11)."
+  },
+  {
+    "guid": "2026-11-09",
+    "url": "https://github.com/minsung1013/pharma_news",
+    "title": "흑염소 바이오 뉴스 — 2026-11-09",
+    "file": "2026-11-09.mp3",
+    "bytes": 5672829,
+    "duration_sec": 945.432,
+    "pubDate": "Mon, 09 Nov 2026 06:00:00 +0000",
+    "summary": "오늘 선별 뉴스 22건 (국내 12 · 해외 10)."
   }
 ]
